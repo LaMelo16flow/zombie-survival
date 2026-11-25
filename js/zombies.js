@@ -146,7 +146,7 @@ export const zombieSystem = {
     meleeCd -= dt; shootCd -= dt;
     if (P.aimT > 0) P.aimT -= dt;
     P.aiming = P.aimT > 0;
-    if (!G.dead) {
+    if (!G.dead && !G.building && !G.driving) {
       if (pressed('attack') || (down('attack') && meleeCd <= 0)) melee();
       if (pressed('shoot') || (down('shoot') && shootCd <= 0)) shoot();
     }

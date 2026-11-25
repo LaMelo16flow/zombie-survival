@@ -20,6 +20,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 | Follow / hold position | G | CMD |
 | Journal (goals + your decisions) | J | LOG |
 | Pause / save / load | P | MENU |
+| Build mode (1-7 pick, T rotate, F place, X remove) | B | BUILD |
 
 ## Build log
 - **v0.1** — 3D open world (1 km²), third-person character, camera, PC + touch controls
@@ -32,6 +33,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 - **v0.8** — anime characters: big heads with anime eyes and shine, 5 hairstyles, scarves, backpacks, sneakers, faction bandanas; zombies with glowing red eyes, torn sleeves, blood stains and a lurching walk (4 looks per type); new weapon models; blood bursts, impact stars, camera shake; melee soft lock-on
 - **v0.9** — anime menus & HUD: comic-style title screen, slanted HP/food/water/stamina bars with damage trail, portrait with health ring, clock with sun/moon, rotating minimap (zombies, people, lakes), painted world map, cinematic place/day banners, visual-novel dialog boxes (number keys pick choices), backpack item cards, floating damage numbers, restyled touch buttons
 - **v0.10** — sound & atmosphere: live-synthesised music (calm pads by day, darker at night, drums kick in when zombies chase you), swings, hits, gunshots, footsteps (splashes in water), zombie groans from the left/right, pickups, rain, wind, thunder, night crickets; weather (clear, cloudy, rain, storm with lightning, fog) that changes over time — rain and fog make zombies see less; fireflies on clear nights; music/sound toggles in the pause menu
+- **v0.11** — base building: walls (snap together), doors, spike traps, campfires (light + healing), beds (sleep), workbench (craft ammo, meds, machete, pistol, rifle), storage boxes; zombies claw through walls and doors, so defend and rebuild; everything you build is saved (and to GitHub)
 
 ## Saving to GitHub
 1. Create a fine-grained token: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → *Generate new token*.

@@ -2,6 +2,7 @@ import * as THREE from '../lib/three.module.min.js';
 import { rng, fbm, clamp } from './util.js';
 import { toon, merge } from './style.js';
 
+let _t = 0; const G_time = () => _t; export const tickWorld = t => { _t = t; };
 export const WORLD_SIZE = 1000;          // metres, square, centred on 0,0
 export const HALF = WORLD_SIZE / 2;
 const SEED = 1337;
@@ -44,12 +45,22 @@ const CELL = 20;
 const grid = new Map();
 const key = (cx, cz) => cx + ',' + cz;
 function insert(c, minX, minZ, maxX, maxZ) {
+  c.cells = [];
   for (let cx = Math.floor(minX / CELL); cx <= Math.floor(maxX / CELL); cx++)
     for (let cz = Math.floor(minZ / CELL); cz <= Math.floor(maxZ / CELL); cz++) {
       const k = key(cx, cz);
       if (!grid.has(k)) grid.set(k, []);
-      grid.get(k).push(c);
+      grid.get(k).push(c); c.cells.push(k);
     }
+}
+export function removeCollider(c) {
+  for (const k of c.cells || []) { const l = grid.get(k); const i = l ? l.indexOf(c) : -1; if (i >= 0) l.splice(i, 1); }
+  c.cells = [];
+}
+// Oriented box (for walls you can rotate): stored as a box in the rotated frame
+export function addOBox(x, z, w, d, rot) {
+  const c = { t: 2, x, z, hw: w / 2, hd: d / 2, cs: Math.cos(rot), sn: Math.sin(rot) };
+  const r = Math.hypot(w, d) / 2; insert(c, x - r, z - r, x + r, z + r); return c;
 }
 export function addCircle(x, z, r) { const c = { t: 0, x, z, r }; insert(c, x - r, z - r, x + r, z + r); return c; }
 export function addBox(x, z, w, d) { const c = { t: 1, x, z, hw: w / 2, hd: d / 2 }; insert(c, x - w / 2, z - d / 2, x + w / 2, z + d / 2); return c; }
@@ -62,6 +73,19 @@ export function collide(pos, r) {
     if (c.t === 0) {
       const dx = pos.x - c.x, dz = pos.z - c.z, rr = r + c.r, d2 = dx * dx + dz * dz;
       if (d2 < rr * rr && d2 > 1e-6) { const d = Math.sqrt(d2), p = (rr - d) / d; pos.x += dx * p; pos.z += dz * p; }
+    } else if (c.t === 2) {
+      // rotate into the box frame, resolve, rotate back
+      const rx = pos.x - c.x, rz = pos.z - c.z;
+      const lx = rx * c.cs - rz * c.sn, lz = rx * c.sn + rz * c.cs;
+      const nx = clamp(lx, -c.hw, c.hw), nz = clamp(lz, -c.hd, c.hd);
+      let dx = lx - nx, dz = lz - nz; const d2 = dx * dx + dz * dz;
+      let ox = 0, oz = 0;
+      if (d2 < r * r) {
+        if (d2 > 1e-6) { const d = Math.sqrt(d2), p = (r - d) / d; ox = dx * p; oz = dz * p; }
+        else { const px = c.hw - Math.abs(lx), pz = c.hd - Math.abs(lz); if (px < pz) ox = Math.sign(lx || 1) * (px + r); else oz = Math.sign(lz || 1) * (pz + r); }
+        pos.x += ox * c.cs + oz * c.sn; pos.z += -ox * c.sn + oz * c.cs;
+        c.touched = G_time();
+      }
     } else {
       const nx = clamp(pos.x, c.x - c.hw, c.x + c.hw), nz = clamp(pos.z, c.z - c.hd, c.z + c.hd);
       const dx = pos.x - nx, dz = pos.z - nz, d2 = dx * dx + dz * dz;

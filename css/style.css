@@ -138,3 +138,12 @@ input:focus, select:focus { border-color: var(--teal); outline: none; }
   #minimap { width: 90px; height: 90px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* ---------- Build bar ---------- */
+#buildbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 8; display: flex; gap: 6px;
+  max-width: calc(100vw - 20px); overflow-x: auto; padding: 6px; background: rgba(21,18,28,.75); border-radius: 14px; pointer-events: auto; scrollbar-width: none; }
+#buildbar .bp { flex: none; min-height: 52px; padding: 6px 14px; text-align: left; display: flex; flex-direction: column; justify-content: center; font-size: 12px; }
+#buildbar .bp small { font-weight: 600; opacity: .65; font-size: 11px; }
+#buildbar .bp.on { background: var(--gold); }
+#buildbar .bp[data-poor] { opacity: .55; }
+#buildbar .bp.act { background: var(--red); color: #fff; }

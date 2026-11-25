@@ -10,7 +10,8 @@ const KEYMAP = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   ShiftLeft: 'sprint', ShiftRight: 'sprint', KeyE: 'interact', KeyF: 'attack', Space: 'attack', KeyR: 'shoot',
   KeyB: 'build', KeyM: 'map', KeyQ: 'faction', KeyJ: 'journal', KeyI: 'inventory', Escape: 'menu', KeyP: 'menu',
-  Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', KeyG: 'command'
+  Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', Digit4: 'slot4', Digit5: 'slot5', Digit6: 'slot6', Digit7: 'slot7',
+  KeyG: 'command', KeyT: 'rotate', KeyX: 'demolish'
 };
 
 export function pressed(a) { return pressedQ.has(a); }
