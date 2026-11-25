@@ -7,6 +7,7 @@ import { toast, banner } from './ui.js';
 import { sfx } from './audio.js';
 import { rng } from './util.js';
 import { toon } from './style.js';
+import { houseInterior, multiStory, updateInteriors } from './interiors.js';
 
 // The places to explore. "type" decides buildings and loot.
 export const LOCATIONS = [
@@ -19,7 +20,10 @@ export const LOCATIONS = [
   { id: 'steel',    name: 'The Steel Yard',       type: 'raider',   x: 260,  z: 210,  r: 34, faction: 'wolves' },
   { id: 'tower',    name: 'Radio Tower',          type: 'tower',    x: -20,  z: 340,  r: 28, faction: 'order' },
   { id: 'mall',     name: 'Eastgate Mall',        type: 'mall',     x: 330,  z: 20,   r: 40 },
-  { id: 'lab',      name: 'Helix Research Lab',   type: 'lab',      x: -340, z: -340, r: 30 }
+  { id: 'lab',      name: 'Helix Research Lab',   type: 'lab',      x: -340, z: -340, r: 30 },
+  { id: 'police',   name: 'Kessler County Police', type: 'police',   x: -110, z: 250,  r: 26 },
+  { id: 'apts',     name: 'Hillside Apartments',  type: 'apartment', x: 170, z: 120,  r: 24 },
+  { id: 'school',   name: 'Pine Valley School',   type: 'school',   x: 30,   z: -240, r: 26 }
 ];
 
 const LOOT = {
@@ -30,6 +34,10 @@ const LOOT = {
   military: { ammo: [4, 12], meds: [0, 1], scrap: [1, 2], fuel: [0, 1], metal: [1, 2], gun: 0.25 },
   mall:     { food: [1, 3], water: [1, 3], scrap: [0, 2], cloth: [1, 3], melee: 0.2 },
   lab:      { meds: [1, 2], scrap: [1, 3], metal: [0, 2], herbs: [0, 2] },
+  police:   { ammo: [3, 10], meds: [0, 1], scrap: [0, 2], cloth: [0, 1], gun: 0.2, armor: 0.12 },
+  apartment:{ food: [0, 2], water: [0, 2], cloth: [0, 2], meds: [0, 1], scrap: [0, 1], herbs: [0, 1] },
+  school:   { food: [0, 2], water: [0, 1], cloth: [1, 2], meds: [0, 1], rope: [0, 1], scrap: [0, 1] },
+  house_kitchen: { food: [1, 3], water: [1, 2], veg: [0, 1] },
   camp: {}, raider: {}, tower: {}
 };
 
@@ -90,6 +98,7 @@ export function giveLoot(type) {
   for (const [k, v] of Object.entries(t)) {
     const own = (list, w) => { inv[list] = inv[list] || []; if (!inv[list].includes(w)) inv[list].push(w); };
     if (k === 'gun') { if (Math.random() < v) { const g = Math.random() < 0.4 ? 'rifle' : Math.random() < 0.5 ? 'shotgun' : 'pistol'; if (!(inv.ownedGuns || []).includes(g)) { own('ownedGuns', g); inv.gun = inv.gun || g; got.push('a ' + g + '!'); } inv.ammo += 6; } continue; }
+    if (k === 'armor') { if (Math.random() < v && !(inv.ownedArmor || []).includes('riot')) { own('ownedArmor', 'riot'); if (!inv.armor || inv.armor === 'none' || inv.armor === 'leather') inv.armor = 'riot'; got.push('riot gear!'); } continue; }
     if (k === 'melee') { if (Math.random() < v && !(inv.ownedMelee || []).includes('machete')) { own('ownedMelee', 'machete'); inv.melee = 'machete'; got.push('a machete!'); } continue; }
     const n = v[0] + Math.floor(Math.random() * (v[1] - v[0] + 1));
     if (n > 0) { inv[k] = (inv[k] || 0) + n; got.push(`${n} ${k}`); }
@@ -111,9 +120,9 @@ export function buildLocations(scene) {
       case 'town': {
         const spots = [[-22, -18], [0, -20], [22, -18], [-24, 12], [24, 12], [-6, 22], [12, 26]];
         for (const [dx, dz] of spots) {
-          const w = 7 + r() * 3, d = 6 + r() * 2;
-          building(scene, L.x + dx, L.z + dz, w, d, 3.2, [0xf2d6a2, 0xa8c8e8, 0xe8a598, 0xf4efe4][Math.floor(r() * 4)], [0xc0574a, 0x4a6fa5, 0x5a8f5a, 0x8a5a9f][Math.floor(r() * 4)]);
-          crate(scene, id(), L.x + dx + (r() - 0.5) * (w - 3), L.z + dz - d / 4, 'town');
+          const w = 9 + r() * 2.5, d = 8 + r() * 1.5, col = [0xf2d6a2, 0xa8c8e8, 0xe8a598, 0xf4efe4][Math.floor(r() * 4)];
+          building(scene, L.x + dx, L.z + dz, w, d, 3.2, col, [0xc0574a, 0x4a6fa5, 0x5a8f5a, 0x8a5a9f][Math.floor(r() * 4)]);
+          houseInterior(scene, L.id + dx + '_' + dz, L.x + dx, L.z + dz, w, d, 3.2, col);
         }
         for (let i = 0; i < 4; i++) car(scene, L.x - 30 + i * 18 + r() * 5, L.z - 3 + r() * 4, r() * 6, [0x7a2020, 0x204a7a, 0x777777, 0x2f5a2f][i]);
         break;
@@ -153,6 +162,31 @@ export function buildLocations(scene) {
         building(scene, L.x, L.z - 6, 30, 18, 6, 0xbfb6a8, 0x6b6b6b);
         for (let i = 0; i < 6; i++) crate(scene, id(), L.x - 12 + i * 5, L.z - 10 + (i % 2) * 5, 'mall');
         for (let i = 0; i < 6; i++) car(scene, L.x - 15 + i * 6, L.z + 16 + (i % 2) * 6, (i % 2) * Math.PI + 0.1, [0x7a2020, 0x204a7a, 0x777777, 0x2f5a2f, 0xb08a20, 0x222222][i]);
+        break;
+      }
+      case 'police': {
+        multiStory(scene, L, L.x, L.z - 4, 18, 16, { color: 0x8a9bb5, roof: 0x2a3550, rooms: [
+          { floor: 0, side: 'front', kind: 'desk', loot: 'police', dx: -5 }, { floor: 0, side: 'back', kind: 'locker', loot: 'police', dx: -6, dz: -2.5 },
+          { floor: 0, side: 'back', kind: 'locker', loot: 'police', dx: -2, dz: -2.5 }, { floor: 1, side: 'front', kind: 'desk', loot: 'police', dx: -4 },
+          { floor: 1, side: 'back', kind: 'crate', loot: 'police', dx: -6 }, { floor: 1, side: 'back', kind: 'shelf', loot: 'police', dx: -2, dz: -2.6 }] });
+        car(scene, L.x - 8, L.z + 10, 0.3, 0xf4efe4); car(scene, L.x + 6, L.z + 11, 2.8, 0x1c1a22);
+        const sign = new THREE.Mesh(new THREE.BoxGeometry(5, 0.8, 0.15), M(0x2a3550)); sign.position.set(L.x, heightAt(L.x, L.z) + 3, L.z + 4.2); scene.add(sign);
+        break;
+      }
+      case 'apartment': {
+        multiStory(scene, L, L.x, L.z - 3, 18, 14, { color: 0xe8a598, roof: 0x8a5a9f, rooms: [
+          { floor: 0, side: 'front', kind: 'sofa', loot: 'apartment', dx: -5, rot: Math.PI }, { floor: 0, side: 'back', kind: 'fridge', loot: 'house_kitchen', dx: -8, dz: -2 },
+          { floor: 0, side: 'back', kind: 'shelf', loot: 'apartment', dx: -3, dz: -2.6 }, { floor: 1, side: 'front', kind: 'bed', loot: 'apartment', dx: -6 },
+          { floor: 1, side: 'back', kind: 'bed', loot: 'apartment', dx: -6 }, { floor: 1, side: 'back', kind: 'desk', loot: 'apartment', dx: -2, dz: -2.4 }] });
+        for (let i = 0; i < 3; i++) car(scene, L.x - 10 + i * 7, L.z + 12, 0.05, [0xb08a20, 0x4a6fa5, 0x777777][i]);
+        break;
+      }
+      case 'school': {
+        multiStory(scene, L, L.x, L.z - 4, 22, 16, { color: 0xf2d6a2, roof: 0xc0574a, rooms: [
+          { floor: 0, side: 'front', kind: 'desk2', loot: 'school', dx: -6 }, { floor: 0, side: 'back', kind: 'locker', loot: 'school', dx: -8, dz: -2.5 },
+          { floor: 0, side: 'back', kind: 'shelf', loot: 'school', dx: -3, dz: -2.6 }, { floor: 1, side: 'front', kind: 'desk2', loot: 'school', dx: -5 },
+          { floor: 1, side: 'back', kind: 'shelf', loot: 'school', dx: -6, dz: -2.6 }, { floor: 1, side: 'back', kind: 'crate', loot: 'school', dx: -2 }] });
+        for (let i = 0; i < 6; i++) prop(scene, new THREE.CylinderGeometry(0.05, 0.05, 3, 5), 0x9aa3ad, L.x - 12 + i * 5, L.z + 14, 1.5);
         break;
       }
       case 'lab': {
@@ -207,11 +241,12 @@ export const locationSystem = {
       // A horde waits in dangerous places when you arrive
       if (d < L.r + 60 && d > L.r + 30 && !L.faction && !L._spawned) {
         L._spawned = true;
-        const n = { military: 10, hospital: 7, mall: 8, lab: 6, town: 6 }[L.type] || 3;
+        const n = { military: 10, hospital: 7, mall: 8, lab: 6, town: 6, police: 8, apartment: 6, school: 7 }[L.type] || 3;
         spawnGroup(L.x, L.z, n, L.type === 'military' ? ['walker', 'runner', 'brute'] : ['walker', 'walker', 'runner']);
       }
       if (d > L.r + 200) L._spawned = false;
     }
+    updateInteriors();
     let inAny = false;
     for (const b of buildings) {
       const inside = Math.abs(P.pos.x - b.x) < b.hw + 0.5 && Math.abs(P.pos.z - b.z) < b.hd + 0.5;
@@ -220,3 +255,5 @@ export const locationSystem = {
     P.camDist += ((inAny ? 3.6 : 7) - P.camDist) * Math.min(1, dt * 4);
   }
 };
+
+G.giveLoot = giveLoot;

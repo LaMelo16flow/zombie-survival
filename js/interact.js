@@ -21,6 +21,7 @@ export const interactSystem = {
       if (o.enabled && !o.enabled()) continue;
       const x = o.getPos ? o.getPos().x : o.x, z = o.getPos ? o.getPos().z : o.z;
       const d = Math.hypot(x - P.pos.x, z - P.pos.z);
+      if (o.y !== undefined && Math.abs(o.y - P.pos.y) > 2) continue;   // other floor
       const score = d + (o.lowPriority ? 3 : 0);   // gathering loses to people, loot, doors…
       if (d < (o.r || 2) * (P.elevated ? 1.6 : 1) && score < bd) { bd = score; best = o; }
     }

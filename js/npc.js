@@ -4,6 +4,7 @@ import { heightAt, collide } from './world.js';
 import { makeHuman, animateHuman, giveWeapon } from './characters.js';
 import { zombies, hitZombie } from './zombies.js';
 import { burst } from './effects.js';
+import { settleY } from './interiors.js';
 
 // Human characters that are not the player: faction guards, leaders, wandering survivors, your members.
 export const npcs = [];
@@ -104,7 +105,7 @@ export const npcSystem = {
         else { n.wanderT -= dt; if (n.wanderT < 0) { n.wanderT = 3 + Math.random() * 6; n.rot += (Math.random() - 0.5) * 3; n.walk = Math.random() < 0.5; } if (n.walk && n.role !== 'leader') moveToward(n, n.pos.x + Math.sin(n.rot), n.pos.z + Math.cos(n.rot), 1.2, dt); }
       }
       collide(n.pos, 0.4);
-      n.pos.y = heightAt(n.pos.x, n.pos.z);
+      settleY(n.pos, dt);
       n.mesh.rotation.y = n.rot;
       if (dP < 90) animateHuman(n.mesh, dt, n.speed, { attack: n.attackT, aim: (n.weapon === 'pistol' || n.weapon === 'rifle') && n.attackT > 0 });
       if (n.role === 'member') { const m = n.data; m.x = n.pos.x; m.z = n.pos.z; m.hp = n.hp; }

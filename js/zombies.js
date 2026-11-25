@@ -8,6 +8,7 @@ import { toast, damageNumber } from './ui.js';
 import { burst, impact } from './effects.js';
 import { sfx } from './audio.js';
 import { MELEE, GUNS } from './items.js';
+import { settleY } from './interiors.js';
 
 // Zombie kinds. Multipliers can be changed by story decisions (G.save.world.mods).
 const KINDS = {
@@ -207,7 +208,7 @@ export const zombieSystem = {
         const reach = 1.3 * (zb.k.scale || 1);
         if (td > reach) speed = zb.k.chase * (mods.zSpeed || 1) * (night ? 1.15 : 1);
         zb.atkCd -= dt;
-        if (td <= reach + 0.25 && zb.atkCd <= 0) {
+        if (td <= reach + 0.25 && zb.atkCd <= 0 && Math.abs((target ? target.pos.y : P.pos.y) - zb.pos.y) < 1.6) {
           zb.atkCd = 1.1; zb.atkAnim = 1;
           if (target) target.hurt(zb.k.dmg, zb); else if (!P.elevated) P.hurt(zb.k.dmg * (mods.zDmg || 1), 'zombie');
         }
@@ -226,7 +227,7 @@ export const zombieSystem = {
         if (e2 < 0.8 && e2 > 1e-4) { const e = Math.sqrt(e2), p = (0.9 - e) / e * 0.5; zb.pos.x += ex * p; zb.pos.z += ez * p; }
       }
       collide(zb.pos, 0.4 * (zb.k.scale || 1));
-      zb.pos.y = heightAt(zb.pos.x, zb.pos.z);
+      settleY(zb.pos, dt);
       zb.mesh.rotation.y = zb.rot;
       if (d < 90) animateHuman(zb.mesh, dt, speed / 4, { zombie: true, attack: zb.atkAnim });
     }

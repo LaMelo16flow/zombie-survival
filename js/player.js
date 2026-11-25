@@ -4,6 +4,7 @@ import { input, down, updateMoveFromKeys } from './input.js';
 import { heightAt, collide, inWater } from './world.js';
 import { WATER } from './world.js';
 import { sfx } from './audio.js';
+import { settleY } from './interiors.js';
 import { makeHuman, animateHuman } from './characters.js';
 import { clamp } from './util.js';
 
@@ -58,7 +59,7 @@ export function updatePlayer(dt) {
     P.pos.y = e.y;
   } else {
     collide(P.pos, P.radius);
-    P.pos.y = Math.max(heightAt(P.pos.x, P.pos.z), WATER - 1.1);   // swim instead of sinking
+    settleY(P.pos, dt, WATER - 1.1);   // floors, stairs; swim instead of sinking
   }
   P.mesh.rotation.y = P.rot;
 
