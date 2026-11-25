@@ -9,7 +9,7 @@ export const input = { mx: 0, mz: 0, lookX: 0, lookY: 0, enabled: false };
 const KEYMAP = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   ShiftLeft: 'sprint', ShiftRight: 'sprint', KeyE: 'interact', KeyF: 'attack', Space: 'attack', KeyR: 'shoot',
-  KeyB: 'build', KeyQ: 'faction', KeyJ: 'journal', KeyI: 'inventory', Escape: 'menu', KeyP: 'menu',
+  KeyB: 'build', KeyM: 'map', KeyQ: 'faction', KeyJ: 'journal', KeyI: 'inventory', Escape: 'menu', KeyP: 'menu',
   Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', KeyG: 'command'
 };
 

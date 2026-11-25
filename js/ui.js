@@ -1,5 +1,8 @@
 import { G, newSave } from './state.js';
 import { clockText, isNight } from './daynight.js';
+import { pressed, addTouchButton } from './input.js';
+import { LOCATIONS } from './locations.js';
+import { WORLD_SIZE } from './world.js';
 
 const $ = id => document.getElementById(id);
 let toastTimer = 0;
@@ -41,3 +44,60 @@ export function updateHUD(dt) {
   const inv = G.save.inv;
   $('clock').innerHTML = `${clockText()}${isNight() ? ' 🌙' : ''}<br>☠ ${st.kills}` + (inv.gun ? `<br>🔫 ${inv.ammo}` : '');
 }
+
+/* ---------- Inventory ---------- */
+const USE = {
+  food:  { label: 'Eat',   fx: s => { s.hunger = Math.min(100, s.hunger + 35); }, msg: 'You eat. (+35 food)' },
+  water: { label: 'Drink', fx: s => { s.thirst = Math.min(100, s.thirst + 40); }, msg: 'You drink. (+40 water)' },
+  meds:  { label: 'Heal',  fx: s => { s.hp = Math.min(s.maxHp, s.hp + 45); }, msg: 'You patch yourself up. (+45 health)' }
+};
+const ICON = { food: '🥫', water: '💧', meds: '💊', wood: '🪵', scrap: '🔩', ammo: '🔫' };
+
+export function openInventory() {
+  const inv = G.save.inv;
+  const rows = Object.keys(ICON).map(k => `<div class="row"><span>${ICON[k]} ${k}</span><span>${inv[k] || 0}
+    ${USE[k] ? `<button class="small" data-use="${k}" ${inv[k] ? '' : 'disabled'}>${USE[k].label}</button>` : ''}</span></div>`).join('');
+  showModal(`<div class="panel"><h2>Backpack</h2>
+    <div class="row"><span>Melee</span><span>${inv.melee}</span></div>
+    <div class="row"><span>Gun</span><span>${inv.gun || '—'}</span></div>
+    ${rows}
+    ${G.extraInventory ? G.extraInventory() : ''}
+    <p style="opacity:.6;font-size:12px">Health ${G.save.stats.hp | 0} · Food ${G.save.stats.hunger | 0} · Water ${G.save.stats.thirst | 0}</p>
+    <button class="primary" id="inv-close">Close</button></div>`);
+  document.querySelectorAll('[data-use]').forEach(b => b.onclick = () => {
+    const k = b.dataset.use; if (!inv[k]) return;
+    inv[k]--; USE[k].fx(G.save.stats); toast(USE[k].msg); openInventory();
+  });
+  $('inv-close').onclick = closeModal;
+}
+
+/* ---------- Map ---------- */
+export function openMap() {
+  const size = Math.max(200, Math.min(innerWidth - 80, innerHeight - 190));
+  showModal(`<div class="panel" style="max-width:${size + 40}px"><h2>Map</h2>
+    <canvas id="mapc" width="${size}" height="${size}" style="width:100%;border-radius:8px;background:#26301f"></canvas>
+    <p style="font-size:12px;opacity:.7">Only places you have found are named. ${G.mapLegend ? G.mapLegend() : ''}</p>
+    <button class="primary" id="map-close">Close</button></div>`);
+  const c = $('mapc').getContext('2d'), k = size / WORLD_SIZE, toM = v => (v + WORLD_SIZE / 2) * k;
+  c.font = '11px sans-serif';
+  for (const L of LOCATIONS) {
+    const found = G.save.world.discovered.includes(L.id);
+    c.fillStyle = found ? (G.locationColor ? G.locationColor(L) : '#e0a34a') : 'rgba(255,255,255,.15)';
+    c.beginPath(); c.arc(toM(L.x), toM(L.z), Math.max(4, L.r * k), 0, 7); c.fill();
+    if (found) { c.fillStyle = '#fff'; c.fillText(L.name, toM(L.x) + 8, toM(L.z) + 4); }
+  }
+  const P = G.player;
+  c.fillStyle = '#ff4136'; c.save(); c.translate(toM(P.pos.x), toM(P.pos.z)); c.rotate(-P.rot);
+  c.beginPath(); c.moveTo(0, 8); c.lineTo(-5, -5); c.lineTo(5, -5); c.fill(); c.restore();
+  $('map-close').onclick = closeModal;
+}
+
+export const uiSystem = {
+  init() { addTouchButton('BAG', 'inventory'); addTouchButton('MAP', 'map'); },
+  update() {
+    if (pressed('inventory')) openInventory();
+    if (pressed('map')) openMap();
+  }
+};
+// Close windows with the same key
+addEventListener('keydown', e => { if (G.paused && !document.querySelector('#modal input:focus') && ['KeyI', 'KeyM', 'Escape'].includes(e.code) && !G.dead && !G.lockModal) closeModal(); });

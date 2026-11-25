@@ -13,7 +13,11 @@ Every decision changes where the story goes. Create your own faction, recruit su
 | Sprint | Shift | push stick to the edge |
 | Melee | F / Space / left click | HIT |
 | Shoot | R / right click | SHOOT |
+| Use / search | E | USE |
+| Backpack | I | BAG |
+| Map | M | MAP |
 
 ## Build log
 - **v0.1** — 3D open world (1 km²), third-person character, camera, PC + touch controls
 - **v0.2** — zombies (walker, runner, brute), melee + guns, health/food/water/stamina, day–night cycle (night = more, faster zombies), flashlight, death screen
+- **v0.3** — 10 places to explore (town, gas station, farm, hospital, military fort, mall, lab, 3 faction camps), walk-in buildings, lootable crates that refill, backpack (eat/drink/heal), map with discovery, hordes guarding dangerous places

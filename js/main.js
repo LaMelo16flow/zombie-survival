@@ -3,7 +3,9 @@ import { G, VERSION, newSave } from './state.js';
 import { initInput, endFrame, input } from './input.js';
 import { buildTerrain, buildForest } from './world.js';
 import { createPlayer, updatePlayer } from './player.js';
-import { initHUD, updateHUD } from './ui.js';
+import { initHUD, updateHUD, uiSystem } from './ui.js';
+import { interactSystem } from './interact.js';
+import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
 import { dayNight } from './daynight.js';
 import { survival } from './survival.js';
 import { zombieSystem } from './zombies.js';
@@ -42,8 +44,10 @@ function initRenderer() {
 }
 
 function buildWorld() {
+  registerFlats();
   buildTerrain(G.scene);
-  buildForest(G.scene);
+  buildForest(G.scene, (x, z) => nearLocation(x, z, 6));
+  buildLocations(G.scene);
 }
 
 function startGame(save) {
@@ -51,7 +55,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [dayNight, survival, zombieSystem];
+  G.systems = [dayNight, survival, zombieSystem, interactSystem, locationSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
