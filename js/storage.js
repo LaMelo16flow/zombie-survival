@@ -146,14 +146,14 @@ function openSaveGitHub() {
 
 export function openPause() {
   const c = getCfg();
-  showModal(`<div class="panel" style="text-align:center"><h2>Paused</h2>
+  showModal(`<div class="panel center"><h2>Paused</h2>
     <p style="font-size:13px;opacity:.7">Day ${G.save.world.day} · GitHub: ${ghReady() ? `${esc(c.owner)}/${esc(c.repo)}` : 'not set up'}</p>
     <div class="choices">
       <button class="primary" id="p-resume">Resume</button>
-      <button id="p-gh">☁️ Save to GitHub</button>
-      <button id="p-load">📂 Load from GitHub</button>
-      <button id="p-local">💾 Save on this device</button>
-      <button id="p-set">⚙️ GitHub settings</button>
+      <button id="p-gh">Save to GitHub</button>
+      <button id="p-load">Load from GitHub</button>
+      <button id="p-local">Save on this device</button>
+      <button id="p-set">GitHub settings</button>
       <button id="p-quit">Quit to title</button>
     </div></div>`);
   const on = (id, fn) => document.getElementById(id).onclick = fn;

@@ -3,7 +3,7 @@ import { G } from './state.js';
 import { addFlat, heightAt, addBox, addCircle } from './world.js';
 import { addInteractable } from './interact.js';
 import { spawnGroup } from './zombies.js';
-import { toast } from './ui.js';
+import { toast, banner } from './ui.js';
 import { rng } from './util.js';
 import { toon } from './style.js';
 
@@ -199,7 +199,7 @@ export const locationSystem = {
       const d = Math.hypot(P.pos.x - L.x, P.pos.z - L.z);
       if (d < L.r + 10 && !w.discovered.includes(L.id)) {
         w.discovered.push(L.id);
-        toast(`Discovered: <b>${L.name}</b>`, 3);
+        banner(L.name, 'DISCOVERED');
         G.emit('discover', L);
       }
       // A horde waits in dangerous places when you arrive

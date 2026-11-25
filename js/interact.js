@@ -1,5 +1,6 @@
 import { G } from './state.js';
 import { pressed, addTouchButton } from './input.js';
+import { esc } from './ui.js';
 
 // Anything the player can use with E (crates, survivors, doors…)
 // { x, z, r, label: () => string, action: () => void, enabled?: () => bool }
@@ -23,7 +24,11 @@ export const interactSystem = {
     }
     current = best;
     const el = promptEl();
-    if (best) { el.style.display = 'block'; el.textContent = (window.matchMedia('(pointer:coarse)').matches ? 'USE: ' : 'E: ') + best.label(); }
+    if (best) {
+      const html = `<kbd>${window.matchMedia('(pointer:coarse)').matches ? '!' : 'E'}</kbd>${esc(best.label())}`;
+      if (el._h !== html) { el.innerHTML = html; el._h = html; }
+      el.style.display = 'block';
+    }
     else el.style.display = 'none';
     if (best && pressed('interact')) best.action();
   }

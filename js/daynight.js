@@ -30,6 +30,8 @@ export const dayNight = {
     const w = G.save.world;
     w.hour += dt * HOURS_PER_SEC;
     if (w.hour >= 24) { w.hour -= 24; w.day++; G.emit?.('newDay', w.day); }
+    if (w.hour >= 6 && w.hour - dt * HOURS_PER_SEC < 6) G.banner?.('Day ' + w.day, 'DAWN');
+    if (w.hour >= 20 && w.hour - dt * HOURS_PER_SEC < 20) G.banner?.('Night falls', 'THE DEAD GROW BOLDER');
     const h = w.hour;
     const light = clamp(Math.sin(((h - 6) / 14) * Math.PI) * 1.4, 0, 1);          // 0 night … 1 noon
     const dawn = clamp(1 - Math.abs(h - 6.3) / 1.4, 0, 1), dusk = clamp(1 - Math.abs(h - 19.3) / 1.5, 0, 1);

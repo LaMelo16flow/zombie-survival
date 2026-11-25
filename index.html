@@ -4,8 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#15121c">
 <title>Dead Ground — Zombie Survival</title>
 <link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,11 +17,14 @@
 
 <!-- HUD -->
 <div id="hud" class="hidden">
-  <div id="bars"></div>
+  <div id="status"><div id="portrait"><div class="ring"></div><span id="initial">S</span></div><div id="bars"></div></div>
   <div id="clock"></div>
+  <canvas id="minimap" width="236" height="236"></canvas>
+  <div id="banner"><div class="small" id="banner-small"></div><div class="big" id="banner-big"></div><div class="line"></div></div>
   <div id="toast"></div>
   <div id="prompt"></div>
   <div id="crosshair"></div>
+  <div id="dmg"></div>
   <div id="hurt"></div>
 </div>
 
@@ -30,12 +37,14 @@
 
 <!-- Title screen -->
 <div id="title" class="screen">
-  <h1>DEAD GROUND</h1>
-  <p class="sub">Survive. Choose. Lead.</p>
-  <button id="btn-new">New game</button>
-  <div id="title-extra"></div>
-  <p class="help">PC: WASD move · Mouse look (click to lock) · Shift sprint<br>
-  iPhone: left thumb moves · right thumb looks</p>
+  <div class="logo"><h1>DEAD<br>GROUND</h1><div class="kana">デッド・グラウンド</div></div>
+  <div class="sub">Survive · Choose · Lead</div>
+  <div class="menu">
+    <div id="title-extra"></div>
+    <button id="btn-new">New game</button>
+  </div>
+  <p class="help">PC: WASD move · mouse look (click) · Shift sprint · F hit · R shoot · E use<br>
+  iPhone: left thumb moves · right thumb looks · push the stick far to sprint</p>
   <p class="ver" id="ver"></p>
 </div>
 

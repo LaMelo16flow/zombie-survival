@@ -240,6 +240,7 @@ export const factionSystem = {
   init() {
     const fs = G.save.factions;
     G.relation = relation;
+    G.npcList = () => npcs;
     for (const f of Object.keys(FACTIONS)) spawnCamp(f);
     // survivors scattered around the world
     for (let i = 0; i < 9; i++) {

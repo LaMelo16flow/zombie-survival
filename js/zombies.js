@@ -4,7 +4,7 @@ import { pressed, down, addTouchButton } from './input.js';
 import { heightAt, collide } from './world.js';
 import { makeHuman, animateHuman, giveWeapon } from './characters.js';
 import { isNight } from './daynight.js';
-import { toast } from './ui.js';
+import { toast, damageNumber } from './ui.js';
 import { burst, impact } from './effects.js';
 
 // Zombie kinds. Multipliers can be changed by story decisions (G.save.world.mods).
@@ -62,7 +62,7 @@ export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
   if (!zb.alive) return;
   zb.hp -= dmg; zb.hitFlash = 0.12; setFlash(zb, true);
   const hy = zb.pos.y + 1.2 * (zb.k.scale || 1);
-  burst(zb.pos.x, hy, zb.pos.z, 0x7a0f14, 6, 3.5); impact(zb.pos.x, hy, zb.pos.z, 0xffffff, 0.5 + dmg / 80);
+  burst(zb.pos.x, hy, zb.pos.z, 0x7a0f14, 6, 3.5); damageNumber(zb.pos.x, hy + 0.5, zb.pos.z, dmg, dmg >= 50); impact(zb.pos.x, hy, zb.pos.z, 0xffffff, 0.5 + dmg / 80);
   const dx = zb.pos.x - fromX, dz = zb.pos.z - fromZ, l = Math.hypot(dx, dz) || 1;
   zb.kx = dx / l * knock; zb.kz = dz / l * knock;
   zb.state = 'chase';
@@ -135,6 +135,7 @@ let spawnT = 0;
 export const zombieSystem = {
   init() {
     flashLight = new THREE.PointLight(0xffc070, 0, 12); G.scene.add(flashLight);
+    G.zombieList = () => zombies;
     addTouchButton('HIT', 'attack');
     addTouchButton('SHOOT', 'shoot');
     G.on?.('noise', n => { for (const zb of zombies) if (zb.alive && Math.hypot(zb.pos.x - n.x, zb.pos.z - n.z) < n.r) zb.state = 'chase'; });

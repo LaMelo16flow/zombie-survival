@@ -171,7 +171,7 @@ const ENDINGS = [
 function showEnding(E) {
   G.save.story.endings.push(E.id);
   log(`ENDING reached: ${E.title}`);
-  showModal(`<div class="panel" style="text-align:center"><h2 style="font-size:28px">${E.title}</h2><p>${E.text()}</p>
+  showModal(`<div class="panel center"><h2 style="font-size:28px">${E.title}</h2><p>${E.text()}</p>
     <p style="opacity:.6;font-size:13px">Day ${day()} · ${G.save.stats.kills} zombies killed · karma ${G.save.karma}<br>Endings found: ${G.save.story.endings.length}/${ENDINGS.length}</p>
     <button class="primary" id="end-go">Keep playing</button> <button id="end-new">New game</button></div>`);
   G.lockModal = true;
