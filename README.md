@@ -20,7 +20,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 | Follow / hold position | G | CMD |
 | Journal (goals + your decisions) | J | LOG |
 | Pause / save / load | P | MENU |
-| Build mode (1-8 pick, T rotate, F place, X remove) | B | BUILD |
+| Build mode (Z category, 1-7 pick, T rotate, F place, X remove) | B | BUILD |
 | Crafting | C | CRAFT |
 | Drive: get in/out · gas/brake · steer · horn | E · W/S · A/D · F | USE · stick · HIT |
 
@@ -39,6 +39,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 - **v0.12** — vehicles: 8 cars and pickup trucks around the map, arcade driving with suspension tilt and headlights, engine sound, fuel (fuel cans + the gas station pump), crash damage, wrecks you can repair with scrap, run over zombies; vehicle position, fuel and damage are saved
 - **v0.13** — crafting tiers: gather wood (trees), stone/metal (rocks), berries & herbs (bushes), lake water; new materials (cloth, leather, metal, bone, rope…); crafting menu with Workbench / Campfire / Forge stations; tier 1–3 weapons (bone spear, crossbow + bolts, machete, fire axe, pistol, shotgun, rifle, katana), armour (leather 15%, riot 30%, military 45%), bandages, herbal remedies, medkits, cooking (meat, stews, boiled water); equip gear in the backpack
 - **v0.14** — hunting: deer and rabbits (run away), boars (charge), wolf packs (hunt at night); butcher bodies for raw meat, hide and bone; new builds: snare (catches rabbits overnight), hunting stand (climb up — zombies can't reach you), tanning rack (hide → leather), smokehouse (jerky)
+- **v0.15** — more base buildings, sorted into Defense / Survival / Crafting / Hunting: stone walls, metal gates, barricades, watchtower (climb up, zombies can't reach), torch posts, garden plots (plant seeds → vegetables in 2 days), rain collectors (daily water, more when it rains)
 
 ## Saving to GitHub
 1. Create a fine-grained token: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → *Generate new token*.

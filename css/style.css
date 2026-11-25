@@ -159,3 +159,5 @@ input:focus, select:focus { border-color: var(--teal); outline: none; }
 .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
 .tabs button { background: var(--ink); color: var(--paper); }
 .tabs button.on { background: var(--gold); color: var(--ink); }
+#buildbar .bp.cat { background: var(--ink); color: var(--paper); border: 2px solid #4a4260; min-height: 40px; align-self: center; }
+#buildbar .bp.cat.on { background: var(--teal); color: var(--ink); }
