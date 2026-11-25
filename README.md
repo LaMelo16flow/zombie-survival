@@ -19,6 +19,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 | Your faction | Q | CREW |
 | Follow / hold position | G | CMD |
 | Journal (goals + your decisions) | J | LOG |
+| Pause / save / load | P | MENU |
 
 ## Build log
 - **v0.1** — 3D open world (1 km²), third-person character, camera, PC + touch controls
@@ -26,6 +27,16 @@ Every decision changes where the story goes. Create your own faction, recruit su
 - **v0.3** — 10 places to explore (town, gas station, farm, hospital, military fort, mall, lab, 3 faction camps), walk-in buildings, lootable crates that refill, backpack (eat/drink/heal), map with discovery, hordes guarding dangerous places
 - **v0.4** — factions: create your own (name, colour, belief), recruit survivors who follow and fight, claim a base (safe zone, daily food/water from guards, sleep), 3 rival factions (Riverside Haven, Iron Wolves, Order of the Signal) with leaders, guards, trading, reputation and alliances; hostile factions attack you
 - **v0.5** — branching story: 9 decision events (the radio, Dr. Okafor, the armory, the faction war, the Signal, Helix Lab, the cure, raids, sieges), faction side-jobs, karma, journal, and 5 endings (The Cure, Warlord, A New Dawn, The Signal's Choir, Lone Survivor)
+- **v0.6** — saving: autosave on the device every 30 s, plus Save/Load to GitHub (`saves/<slot>.json` in this repo, one commit per save), title screen Continue / Load, pause menu
+
+## Saving to GitHub
+1. Create a fine-grained token: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → *Generate new token*.
+   - Repository access: **Only select repositories** → this repo
+   - Permissions → Repository → **Contents: Read and write**
+2. In the game: title screen → **GitHub storage** (or pause → GitHub settings). Owner and repo fill in automatically on GitHub Pages; paste the token.
+3. Pause → **Save to GitHub**. Each save is a commit to `saves/<slot>.json` — your full world, faction, members and decisions.
+
+The token is kept only in that browser's local storage and is only sent to `api.github.com`.
 
 ## How decisions change the game
 Every story choice sets flags, shifts faction reputation, can wipe out or arm whole factions, changes zombie strength/numbers, and unlocks different endings. Your journal (J) records every decision.

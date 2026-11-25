@@ -30,8 +30,10 @@ export function showDeath(cause) {
   showModal(`<div class="panel" style="text-align:center"><h2 style="color:#c9372c">YOU DIED</h2>
     <p>${cause === 'zombie' ? 'The dead got you.' : cause === 'starving' ? 'Hunger and thirst took you.' : 'You did not make it.'}</p>
     <p>Survived to day ${s.world.day} · ${s.stats.kills} zombies killed</p>
-    <button class="primary" id="d-again">Start again</button></div>`);
-  $('d-again').onclick = () => location.reload();
+    <button class="primary" id="d-again">Start again</button> <button id="d-load">Load last save</button></div>`);
+  G.lockModal = true;
+  $('d-again').onclick = () => G.newGame();
+  $('d-load').onclick = () => location.reload();   // title screen offers Continue from the last autosave
 }
 
 export function showModal(html) { const m = $('modal'); m.innerHTML = html; m.classList.remove('hidden'); G.paused = true; document.exitPointerLock?.(); }
