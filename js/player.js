@@ -1,0 +1,72 @@
+import * as THREE from '../lib/three.module.min.js';
+import { G } from './state.js';
+import { input, down, updateMoveFromKeys } from './input.js';
+import { heightAt, collide } from './world.js';
+import { makeHuman, animateHuman } from './characters.js';
+import { clamp } from './util.js';
+
+export function createPlayer() {
+  const mesh = makeHuman({ shirt: 0x6b4a2b, pants: 0x2f3a45, skin: 0x8d5a3b });
+  G.scene.add(mesh);
+  const s = G.save.player;
+  mesh.position.set(s.x, heightAt(s.x, s.z), s.z);
+  mesh.rotation.y = s.rot;
+  G.player = {
+    mesh, pos: mesh.position, rot: s.rot, speed: 0, radius: 0.45,
+    camYaw: s.rot + Math.PI, camPitch: 0.35, camDist: 7,
+    attackT: 0, aiming: false
+  };
+  return G.player;
+}
+
+const camTarget = new THREE.Vector3();
+const camPos = new THREE.Vector3();
+
+export function updatePlayer(dt) {
+  const P = G.player;
+  updateMoveFromKeys();
+
+  // Camera orbit
+  P.camYaw -= input.lookX * 0.0035;
+  P.camPitch = clamp(P.camPitch + input.lookY * 0.0028, -0.25, 1.1);
+
+  // Movement relative to camera
+  const sprint = down('sprint') && (P.canSprint ? P.canSprint() : true);
+  const maxSpeed = (sprint ? 8.5 : 4.6) * (P.speedMul || 1);
+  const fx = -Math.sin(P.camYaw), fz = -Math.cos(P.camYaw);
+  const rx = -fz, rz = fx;
+  let vx = (fx * -input.mz + rx * input.mx), vz = (fz * -input.mz + rz * input.mx);
+  const mag = Math.min(1, Math.hypot(input.mx, input.mz));
+  if (mag > 0.05) {
+    const l = Math.hypot(vx, vz); vx /= l; vz /= l;
+    P.pos.x += vx * maxSpeed * mag * dt;
+    P.pos.z += vz * maxSpeed * mag * dt;
+    const target = Math.atan2(vx, vz);
+    let d = target - P.rot; d = Math.atan2(Math.sin(d), Math.cos(d));
+    P.rot += d * Math.min(1, dt * 12);
+  }
+  P.moving = mag > 0.05;
+  P.sprinting = sprint && P.moving;
+  P.speed = mag * (sprint ? 1 : 0.55);
+  collide(P.pos, P.radius);
+  P.pos.y = heightAt(P.pos.x, P.pos.z);
+  P.mesh.rotation.y = P.rot;
+
+  if (P.attackT > 0) P.attackT = Math.max(0, P.attackT - dt * 3);
+  animateHuman(P.mesh, dt, P.speed, { attack: P.attackT, aim: P.aiming });
+
+  // Camera follow
+  camTarget.set(P.pos.x, P.pos.y + 1.7, P.pos.z);
+  const cp = Math.cos(P.camPitch);
+  camPos.set(
+    camTarget.x + Math.sin(P.camYaw) * cp * P.camDist,
+    camTarget.y + Math.sin(P.camPitch) * P.camDist,
+    camTarget.z + Math.cos(P.camYaw) * cp * P.camDist
+  );
+  const ground = heightAt(camPos.x, camPos.z) + 0.6;
+  if (camPos.y < ground) camPos.y = ground;
+  G.camera.position.lerp(camPos, Math.min(1, dt * 14));
+  G.camera.lookAt(camTarget);
+
+  const s = G.save.player; s.x = P.pos.x; s.z = P.pos.z; s.rot = P.rot;
+}

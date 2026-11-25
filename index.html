@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Dead Ground — Zombie Survival</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="bars"></div>
+  <div id="clock"></div>
+  <div id="toast"></div>
+  <div id="prompt"></div>
+  <div id="crosshair"></div>
+</div>
+
+<!-- Touch controls -->
+<div id="touch" class="hidden">
+  <div id="stick"><div id="knob"></div></div>
+  <div id="buttons"></div>
+</div>
+
+<!-- Title screen -->
+<div id="title" class="screen">
+  <h1>DEAD GROUND</h1>
+  <p class="sub">Survive. Choose. Lead.</p>
+  <button id="btn-new">New game</button>
+  <div id="title-extra"></div>
+  <p class="help">PC: WASD move · Mouse look (click to lock) · Shift sprint<br>
+  iPhone: left thumb moves · right thumb looks</p>
+  <p class="ver" id="ver"></p>
+</div>
+
+<div id="modal" class="screen hidden"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

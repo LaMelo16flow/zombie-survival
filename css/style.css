@@ -1,0 +1,48 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d0c; color: #e8e4d8;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hidden { display: none !important; }
+
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, rgba(40,10,10,.85), rgba(0,0,0,.95)); z-index: 20; padding: 20px; text-align: center; }
+.screen h1 { font-size: clamp(42px, 10vw, 84px); letter-spacing: .12em; margin: 0; color: #c9372c; text-shadow: 0 4px 24px #000; }
+.screen .sub { margin: 6px 0 28px; opacity: .8; letter-spacing: .2em; text-transform: uppercase; font-size: 13px; }
+.screen .help { opacity: .55; font-size: 12px; line-height: 1.6; margin-top: 26px; }
+.screen .ver { opacity: .35; font-size: 11px; }
+button { font: inherit; background: #2a2f2b; color: #e8e4d8; border: 1px solid #4b544d; border-radius: 10px;
+  padding: 12px 22px; margin: 5px; min-width: 200px; cursor: pointer; font-size: 15px; }
+button:hover, button:active { background: #3b443d; border-color: #7a8a7c; }
+button.primary { background: #8b1e17; border-color: #c9372c; }
+button.small { min-width: 0; padding: 6px 12px; font-size: 13px; }
+input, select { font: inherit; background: #151916; color: #e8e4d8; border: 1px solid #4b544d; border-radius: 8px; padding: 10px; margin: 4px; width: 100%; }
+
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+#bars { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 10px; display: flex; flex-direction: column; gap: 5px; }
+.bar { width: 160px; height: 12px; background: rgba(0,0,0,.55); border-radius: 6px; overflow: hidden; position: relative; }
+.bar > i { position: absolute; inset: 0; transform-origin: left; }
+.bar > span { position: absolute; left: 6px; top: -1px; font-size: 10px; font-weight: 700; text-shadow: 0 1px 2px #000; }
+#clock { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 12px; text-align: right; font-size: 13px; text-shadow: 0 1px 3px #000; line-height: 1.5; }
+#toast { position: absolute; top: 22%; left: 50%; transform: translateX(-50%); font-size: 15px; text-align: center;
+  text-shadow: 0 2px 4px #000; transition: opacity .4s; opacity: 0; max-width: 90vw; }
+#prompt { position: absolute; bottom: 30%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6);
+  padding: 6px 14px; border-radius: 8px; font-size: 14px; display: none; }
+#crosshair { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: rgba(255,255,255,.6); }
+
+#touch { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+#stick { position: absolute; left: calc(30px + env(safe-area-inset-left)); bottom: calc(40px + env(safe-area-inset-bottom));
+  width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.18); }
+#knob { position: absolute; left: 40px; top: 40px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,.3); }
+#buttons { position: absolute; right: calc(20px + env(safe-area-inset-right)); bottom: calc(30px + env(safe-area-inset-bottom));
+  display: grid; grid-template-columns: repeat(2, 64px); gap: 12px; pointer-events: auto; }
+#buttons .tb { width: 64px; height: 64px; border-radius: 50%; background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.3);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; text-align: center; }
+#buttons .tb.on { background: rgba(201,55,44,.6); }
+
+#modal { background: rgba(0,0,0,.82); }
+.panel { background: #151916; border: 1px solid #3a423c; border-radius: 14px; padding: 20px; max-width: 520px; width: 100%;
+  max-height: 85vh; overflow-y: auto; text-align: left; }
+.panel h2 { margin: 0 0 8px; color: #e0a34a; }
+.panel p { line-height: 1.5; }
+.panel .choices button { display: block; width: 100%; text-align: left; margin: 8px 0; }
+.panel .row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #2a2f2b; }
