@@ -84,7 +84,7 @@ function melee() {
   if (meleeCd > 0) return; meleeCd = w.cd; P.attackT = 1; sfx.swing();
   // soft lock-on: turn toward the closest enemy in reach (feels good on a phone)
   let near = null, nd = w.range + 1;
-  for (const t of [...zombies.filter(z => z.alive), ...(G.hostileTargets?.() || [])]) { const d = Math.hypot(t.pos.x - P.pos.x, t.pos.z - P.pos.z); if (d < nd) { nd = d; near = t; } }
+  for (const t of [...zombies.filter(z => z.alive), ...(G.hostileTargets?.() || []), ...(G.meleeTargets?.() || [])]) { const d = Math.hypot(t.pos.x - P.pos.x, t.pos.z - P.pos.z); if (d < nd) { nd = d; near = t; } }
   if (near) P.rot = Math.atan2(near.pos.x - P.pos.x, near.pos.z - P.pos.z);
   for (const zb of zombies) {
     if (!zb.alive) continue;
@@ -98,6 +98,12 @@ function melee() {
     if (Math.hypot(dx, dz) > w.range) continue;
     let a = Math.atan2(dx, dz) - P.rot; a = Math.atan2(Math.sin(a), Math.cos(a));
     if (Math.abs(a) < w.arc / 2 + 0.3) n.hurt(w.dmg);
+  }
+  for (const t of G.meleeTargets?.() || []) {
+    const dx = t.pos.x - P.pos.x, dz = t.pos.z - P.pos.z;
+    if (Math.hypot(dx, dz) > w.range + (t.r || 0) * 0.6) continue;
+    let a = Math.atan2(dx, dz) - P.rot; a = Math.atan2(Math.sin(a), Math.cos(a));
+    if (Math.abs(a) < w.arc / 2 + 0.4) t.onHit(w.dmg * (G.skillMul?.('melee') || 1));
   }
   G.emit?.('noise', { x: P.pos.x, z: P.pos.z, r: 12 });
 }
@@ -203,7 +209,7 @@ export const zombieSystem = {
         zb.atkCd -= dt;
         if (td <= reach + 0.25 && zb.atkCd <= 0) {
           zb.atkCd = 1.1; zb.atkAnim = 1;
-          if (target) target.hurt(zb.k.dmg, zb); else P.hurt(zb.k.dmg * (mods.zDmg || 1), 'zombie');
+          if (target) target.hurt(zb.k.dmg, zb); else if (!P.elevated) P.hurt(zb.k.dmg * (mods.zDmg || 1), 'zombie');
         }
       } else {
         zb.wanderT -= dt;

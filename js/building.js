@@ -30,7 +30,11 @@ export const PIECES = {
   bed:   { name: 'Bed', cost: { wood: 5 }, hp: 60, size: [1.2, 2.2], desc: 'Sleep until morning' },
   bench: { name: 'Workbench', cost: { wood: 4, scrap: 4 }, hp: 80, size: [2, 1], desc: 'Craft ammo, meds, weapons' },
   chest: { name: 'Storage box', cost: { wood: 4 }, hp: 80, size: [1.2, 0.8], desc: 'Store items safely' },
-  forge: { name: 'Forge', cost: { stone: 12, scrap: 4, wood: 4 }, hp: 200, size: [1.8, 1.8], desc: 'Smelt metal, tier 2–3 gear' }
+  forge: { name: 'Forge', cost: { stone: 12, scrap: 4, wood: 4 }, hp: 200, size: [1.8, 1.8], desc: 'Smelt metal, tier 2–3 gear' },
+  snare: { name: 'Snare', cost: { wood: 2, rope: 1 }, hp: 30, size: [1, 1], desc: 'Catches rabbits overnight' },
+  stand: { name: 'Hunting stand', cost: { wood: 8, rope: 1 }, hp: 150, size: [2, 2], desc: 'Climb up: zombies can\'t reach you, animals don\'t notice you' },
+  tanning: { name: 'Tanning rack', cost: { wood: 4, rope: 1 }, hp: 60, size: [2, 0.6], desc: 'Turn hides into leather' },
+  smoke: { name: 'Smokehouse', cost: { wood: 6, stone: 4 }, hp: 120, size: [1.8, 1.8], desc: 'Smoke meat into jerky' }
 };
 const ORDER = Object.keys(PIECES);
 
@@ -62,6 +66,19 @@ function model(type, open = false) {
     g.push(P(box(1.8, 1.2, 1.8, 0, 0.6), 0x8f8a84)); g.push(P(box(1.9, 0.2, 1.9, 0, 1.25), 0x6d6863));
     g.push(P(box(0.8, 0.55, 0.1, 0, 0.55, 0.9), 0xff7a2a)); g.push(P(box(0.5, 1.6, 0.5, 0.5, 2.1, -0.5), 0x6d6863));
     for (let i = 0; i < 6; i++) g.push(P(box(0.36, 0.2, 0.05, -0.6 + (i % 3) * 0.6, 0.25 + Math.floor(i / 3) * 0.6, 0.91), 0x7a746e));
+  } else if (type === 'snare') {
+    g.push(P(box(0.08, 0.6, 0.08, -0.35, 0.3, 0), WOOD_D), P(box(0.08, 0.6, 0.08, 0.35, 0.3, 0), WOOD_D), P(box(0.8, 0.05, 0.05, 0, 0.55, 0), WOOD));
+    g.push(P(new THREE.TorusGeometry(0.22, 0.02, 4, 12).rotateX(Math.PI / 2).translate(0, 0.05, 0.1), 0xd8c08e));
+  } else if (type === 'stand') {
+    for (const x of [-0.8, 0.8]) for (const z of [-0.8, 0.8]) g.push(P(box(0.15, 3.6, 0.15, x, 1.8, z), WOOD_D));
+    g.push(P(box(2, 0.15, 2, 0, 3.6, 0), WOOD)); for (const [x, z, w, d] of [[0, -0.95, 2, 0.1], [-0.95, 0, 0.1, 2], [0.95, 0, 0.1, 2]]) g.push(P(box(w, 0.6, d, x, 3.95, z), WOOD));
+    for (let i = 0; i < 7; i++) g.push(P(box(0.6, 0.06, 0.06, 0, 0.4 + i * 0.5, 1.0), WOOD));
+  } else if (type === 'tanning') {
+    for (const x of [-0.9, 0.9]) g.push(P(box(0.1, 1.8, 0.1, x, 0.9, 0), WOOD_D));
+    g.push(P(box(1.9, 0.08, 0.08, 0, 1.75, 0), WOOD)); g.push(P(box(1.4, 1.2, 0.04, 0, 1.0, 0), 0xc4a27a));
+  } else if (type === 'smoke') {
+    g.push(P(box(1.6, 1.8, 1.6, 0, 0.9, 0), WOOD)); g.push(P(new THREE.ConeGeometry(1.25, 0.9, 4).rotateY(Math.PI / 4).translate(0, 2.25, 0), WOOD_D));
+    g.push(P(box(0.6, 0.9, 0.08, 0, 0.6, 0.81), WOOD_D)); g.push(P(box(0.3, 0.6, 0.3, 0.4, 2.6, 0.3), 0x8f8a84));
   } else if (type === 'chest') {
     g.push(P(box(1.2, 0.6, 0.8, 0, 0.3), WOOD)); g.push(P(box(1.24, 0.15, 0.84, 0, 0.68), WOOD_D)); g.push(P(box(0.16, 0.2, 0.05, 0, 0.5, 0.42), METAL));
   }
@@ -83,7 +100,8 @@ function spawnPiece(data) {
   const r = { data, mesh };
   if (def.blocks && !data.open) r.coll = addOBox(data.x, data.z, def.size[0], def.size[1], data.rot);
   if (data.type === 'bed' || data.type === 'bench' || data.type === 'chest') r.coll = addCircle(data.x, data.z, 0.6);
-  if (data.type === 'forge') r.coll = addCircle(data.x, data.z, 1);
+  if (data.type === 'forge' || data.type === 'smoke') r.coll = addCircle(data.x, data.z, 1);
+  if (data.type === 'tanning') r.coll = addOBox(data.x, data.z, 2, 0.4, data.rot);
   if (data.type === 'fire') {
     r.light = new THREE.PointLight(0xffa040, 0, 14, 1.6); r.light.position.set(data.x, mesh.position.y + 1, data.z); G.scene.add(r.light);
     const fl = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 6), new THREE.MeshBasicMaterial({ color: 0xffb030 }));
@@ -94,6 +112,16 @@ function spawnPiece(data) {
     bed: { label: () => 'Sleep', action: () => sleep() },
     bench: { label: () => 'Use workbench', action: () => G.openCrafting('bench') },
     forge: { label: () => 'Use forge', action: () => G.openCrafting('forge') },
+    tanning: { label: () => 'Use tanning rack', action: () => G.openCrafting('tanning') },
+    smoke: { label: () => 'Use smokehouse', action: () => G.openCrafting('smoke') },
+    snare: { label: () => data.caught ? 'Collect your catch' : 'Snare (check back tomorrow)', action: () => {
+      if (!data.caught) return toast('Nothing yet. Snares catch rabbits overnight.');
+      data.caught = false; G.save.inv.rawmeat = (G.save.inv.rawmeat || 0) + 1; G.save.inv.hide = (G.save.inv.hide || 0) + 1; toast('A rabbit! +1 raw meat, +1 hide'); sfx.pickup(); } },
+    stand: { label: () => G.player.elevated ? 'Climb down' : 'Climb the hunting stand', action: () => {
+      const P = G.player;
+      if (P.elevated) { P.elevated = null; P.pos.x = data.x + Math.sin(data.rot) * 1.8; P.pos.z = data.z + Math.cos(data.rot) * 1.8; }
+      else P.elevated = { x: data.x, z: data.z, y: heightAt(data.x, data.z) + 3.7 };
+    } },
     chest: { label: () => 'Open storage box', action: () => openChest(data) },
     fire: { label: () => 'Cook at the campfire', action: () => G.openCrafting('fire') }
   }[data.type];
@@ -199,7 +227,7 @@ export const buildingSystem = {
     bar = document.createElement('div'); bar.id = 'buildbar'; bar.className = 'hidden';
     document.body.appendChild(bar);
     addTouchButton('BUILD', 'build', true);
-    G.on('newDay', () => { for (const r of placed) if (r.data.type === 'spikes') r.data.hp = PIECES.spikes.hp; });
+    G.on('newDay', () => { for (const r of placed) { if (r.data.type === 'spikes') r.data.hp = PIECES.spikes.hp; if (r.data.type === 'snare' && Math.random() < 0.6) r.data.caught = true; } });
   },
   update(dt) {
     if (pressed('build')) building ? exit() : enter();

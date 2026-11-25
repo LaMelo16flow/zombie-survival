@@ -57,7 +57,7 @@ function gather() {
 
 export const gatherSystem = {
   init() {
-    addInteractable({ getPos: () => target ? target.s : { x: 1e9, z: 1e9 }, r: 3, enabled: () => !!target,
+    addInteractable({ getPos: () => target ? target.s : { x: 1e9, z: 1e9 }, r: 3, lowPriority: true, enabled: () => !!target,
       label: () => ({ tree: 'Chop tree', rock: 'Break rock', bush: target.s.herb ? 'Pick herbs' : 'Pick berries', lake: 'Fill a bottle with lake water' })[target.kind] +
         (target.kind !== 'lake' ? (left(target) > 0 ? '' : ' (used up)') : ''),
       action: gather });

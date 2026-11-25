@@ -35,6 +35,8 @@ export const RECIPES = [
   { cat: 'Weapons', name: 'Fire axe (chops trees faster)', needs: { metal: 2, wood: 3 }, station: 'bench', give: gear('melee', 'axe'), have: () => owns('ownedMelee', 'axe') },
   { cat: 'Weapons', name: 'Pistol', needs: { scrap: 8, metal: 1 }, station: 'bench', give: gear('gun', 'pistol'), have: () => owns('ownedGuns', 'pistol') },
   { cat: 'Armour', name: 'Leather jacket (blocks 15%)', needs: { leather: 6, cloth: 2 }, station: 'bench', give: gear('armor', 'leather'), have: () => owns('ownedArmor', 'leather') },
+  { cat: 'Materials', name: 'Tan leather', needs: { hide: 2 }, station: 'tanning', give: add('leather', 1) },
+  { cat: 'Cooking', name: 'Smoke 2 jerky', needs: { rawmeat: 2, wood: 1 }, station: 'smoke', give: add('jerky', 2) },
   { cat: 'Medicine', name: 'Medkit', needs: { cloth: 2, herbs: 2, scrap: 1 }, station: 'bench', give: add('meds', 1) },
   // ---- Forge (tier 2–3)
   { cat: 'Materials', name: 'Smelt metal bar', needs: { scrap: 3, wood: 1 }, station: 'forge', give: add('metal', 1) },
@@ -58,7 +60,7 @@ const CATS = ['Basics', 'Weapons', 'Armour', 'Medicine', 'Materials', 'Cooking']
 
 let tab = 'Basics';
 export function openCrafting(focus) {
-  if (focus) tab = { bench: 'Weapons', forge: 'Weapons', fire: 'Cooking' }[focus] || tab;
+  if (focus) tab = { bench: 'Weapons', forge: 'Weapons', fire: 'Cooking', smoke: 'Cooking', tanning: 'Materials' }[focus] || tab;
   const inv = G.save.inv;
   const list = RECIPES.filter(r => r.cat === tab && !(r.have && r.have()));
   const rows = list.map((r, i) => {
@@ -71,7 +73,7 @@ export function openCrafting(focus) {
   showModal(`<div class="panel"><h2>Crafting</h2>
     <div class="tabs">${CATS.map(c => `<button class="small ${c === tab ? 'on' : ''}" data-t="${c}">${c}</button>`).join('')}</div>
     ${rows}
-    <p style="font-size:12px;opacity:.65">Stations nearby: ${['bench', 'fire', 'forge'].filter(s => stationNear(s)).map(s => STATION_NAME[s]).join(', ') || 'none — build them with B'}</p>
+    <p style="font-size:12px;opacity:.65">Stations nearby: ${['bench', 'fire', 'forge', 'tanning', 'smoke'].filter(s => stationNear(s)).map(s => STATION_NAME[s]).join(', ') || 'none — build them with B'}</p>
     <button id="cr-close">Close</button></div>`);
   document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { tab = b.dataset.t; openCrafting(); });
   document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => {

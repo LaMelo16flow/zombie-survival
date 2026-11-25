@@ -83,7 +83,7 @@ export function initHUD() {
 export function showDeath(cause) {
   const s = G.save;
   showModal(`<div class="panel center death"><h2>YOU DIED</h2>
-    <p>${cause === 'zombie' ? 'The dead got you.' : cause === 'starving' ? 'Hunger and thirst took you.' : cause === 'raider' ? 'Raiders cut you down.' : cause === 'crash' ? 'You crashed.' : 'You did not make it.'}</p>
+    <p>${cause === 'zombie' ? 'The dead got you.' : cause === 'starving' ? 'Hunger and thirst took you.' : cause === 'raider' ? 'Raiders cut you down.' : cause === 'crash' ? 'You crashed.' : cause === 'wolf' ? 'The wolves got you.' : cause === 'boar' ? 'A boar gored you.' : 'You did not make it.'}</p>
     <p>Survived to day ${s.world.day} · ${s.stats.kills} zombies killed</p>
     <button class="primary" id="d-again">Start again</button> <button id="d-load">Load last save</button></div>`);
   G.lockModal = true;
@@ -151,6 +151,7 @@ function drawMinimap() {
   for (const zb of G.zombieList?.() || []) if (zb.alive) dot(zb.pos.x, zb.pos.z, '#e8364a', zb.k.scale ? 5 : 3.5);
   for (const n of G.npcList?.() || []) if (n.alive) dot(n.pos.x, n.pos.z, n.role === 'member' ? '#4aa3ff' : (G.relation && n.faction && G.relation(n.faction) === 'hostile') ? '#ff8a3a' : '#7ad35a', 4);
   for (const v of G.vehicleList?.() || []) dot(v.pos.x, v.pos.z, '#ffc94a', 5);
+  for (const a of G.animalList?.() || []) if (a.alive) dot(a.pos.x, a.pos.z, a.kind === 'wolf' || a.kind === 'boar' ? '#c9372c' : '#e8d7a0', 3);
   c.restore();
   // you
   c.save(); c.translate(R, R); c.rotate(P.rot - yaw + Math.PI);

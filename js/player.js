@@ -52,8 +52,14 @@ export function updatePlayer(dt) {
   if (P.moving) { P.stepT = (P.stepT || 0) - dt * (sprint ? 1.7 : 1) * mag; if (P.stepT <= 0) { P.stepT = 0.42; sfx.step(inWater(P.pos.x, P.pos.z)); } }
   P.sprinting = sprint && P.moving;
   P.speed = mag * (sprint ? 1 : 0.55);
-  collide(P.pos, P.radius);
-  P.pos.y = Math.max(heightAt(P.pos.x, P.pos.z), WATER - 1.1);   // swim instead of sinking
+  if (P.elevated) {   // standing on a hunting stand: stay on the platform
+    const e = P.elevated, dx = P.pos.x - e.x, dz = P.pos.z - e.z, l = Math.hypot(dx, dz);
+    if (l > 0.75) { P.pos.x = e.x + dx / l * 0.75; P.pos.z = e.z + dz / l * 0.75; }
+    P.pos.y = e.y;
+  } else {
+    collide(P.pos, P.radius);
+    P.pos.y = Math.max(heightAt(P.pos.x, P.pos.z), WATER - 1.1);   // swim instead of sinking
+  }
   P.mesh.rotation.y = P.rot;
 
   if (P.attackT > 0) P.attackT = Math.max(0, P.attackT - dt * 3);
