@@ -93,7 +93,7 @@ export function openMap() {
 }
 
 export const uiSystem = {
-  init() { addTouchButton('BAG', 'inventory'); addTouchButton('MAP', 'map'); },
+  init() { addTouchButton('BAG', 'inventory', true); addTouchButton('MAP', 'map', true); },
   update() {
     if (pressed('inventory')) openInventory();
     if (pressed('map')) openMap();
@@ -101,3 +101,17 @@ export const uiSystem = {
 };
 // Close windows with the same key
 addEventListener('keydown', e => { if (G.paused && !document.querySelector('#modal input:focus') && ['KeyI', 'KeyM', 'Escape'].includes(e.code) && !G.dead && !G.lockModal) closeModal(); });
+
+/* ---------- Choice dialog (used by factions and story) ---------- */
+// choices: [{ label, fn, disabled?, note? }]
+export function showChoice(title, text, choices, { lock = false } = {}) {
+  G.lockModal = lock;
+  showModal(`<div class="panel"><h2>${title}</h2><p>${text}</p><div class="choices">
+    ${choices.map((c, i) => `<button data-c="${i}" ${c.disabled ? 'disabled style="opacity:.4"' : ''}>${c.label}${c.note ? `<br><small style="opacity:.6">${c.note}</small>` : ''}</button>`).join('')}
+    </div></div>`);
+  document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
+    const c = choices[+b.dataset.c]; if (c.disabled) return;
+    G.lockModal = false; closeModal(); c.fn && c.fn();
+  });
+}
+export const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

@@ -88,12 +88,12 @@ function initTouch() {
 }
 
 // Add an on-screen button (touch only). action = name used with pressed()/down().
-export function addTouchButton(label, action) {
+export function addTouchButton(label, action, small = false) {
   if (!isTouch) return;
   const b = document.createElement('div');
-  b.className = 'tb'; b.textContent = label;
+  b.className = small ? 'tb sm' : 'tb'; b.textContent = label;
   b.addEventListener('touchstart', e => { e.preventDefault(); b.classList.add('on'); press(action); }, { passive: false });
   b.addEventListener('touchend', e => { e.preventDefault(); b.classList.remove('on'); release(action); }, { passive: false });
-  document.getElementById('buttons').appendChild(b);
+  document.getElementById(small ? 'topbtns' : 'buttons').appendChild(b);
   return b;
 }

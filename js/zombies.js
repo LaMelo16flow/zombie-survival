@@ -85,6 +85,12 @@ function melee() {
     let a = Math.atan2(dx, dz) - P.rot; a = Math.atan2(Math.sin(a), Math.cos(a));
     if (Math.abs(a) < w.arc / 2 + 0.3) hitZombie(zb, w.dmg * (G.save.world.mods.playerDmg || 1), P.pos.x, P.pos.z, 5);
   }
+  for (const n of G.hostileTargets?.() || []) {
+    const dx = n.pos.x - P.pos.x, dz = n.pos.z - P.pos.z;
+    if (Math.hypot(dx, dz) > w.range) continue;
+    let a = Math.atan2(dx, dz) - P.rot; a = Math.atan2(Math.sin(a), Math.cos(a));
+    if (Math.abs(a) < w.arc / 2 + 0.3) n.hurt(w.dmg);
+  }
   G.emit?.('noise', { x: P.pos.x, z: P.pos.z, r: 12 });
 }
 
@@ -99,7 +105,7 @@ function shoot() {
   const dir = new THREE.Vector3(); G.camera.getWorldDirection(dir);
   const origin = G.camera.position;
   let best = null, bestT = 60;
-  for (const zb of zombies) {
+  for (const zb of [...zombies, ...(G.hostileTargets?.() || []).map(n => ({ alive: true, pos: n.pos, k: {}, npc: n }))]) {
     if (!zb.alive) continue;
     tmpV.set(zb.pos.x, zb.pos.y + 1.2 * (zb.k.scale || 1), zb.pos.z).sub(origin);
     const t = tmpV.dot(dir);
@@ -108,7 +114,7 @@ function shoot() {
     if (perp < 0.7 * (zb.k.scale || 1)) { best = zb; bestT = t; }
   }
   const dmg = (inv.gun === 'rifle' ? 90 : 34) * (G.save.world.mods.playerDmg || 1);
-  if (best) hitZombie(best, dmg, P.pos.x, P.pos.z, 3);
+  if (best?.npc) best.npc.hurt(dmg); else if (best) hitZombie(best, dmg, P.pos.x, P.pos.z, 3);
   flashLight.intensity = 30; flashLight.position.set(P.pos.x + Math.sin(P.rot), P.pos.y + 1.5, P.pos.z + Math.cos(P.rot));
   G.emit?.('noise', { x: P.pos.x, z: P.pos.z, r: 60 });
 }

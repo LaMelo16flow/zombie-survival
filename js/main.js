@@ -5,6 +5,8 @@ import { buildTerrain, buildForest } from './world.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD, uiSystem } from './ui.js';
 import { interactSystem } from './interact.js';
+import { npcSystem } from './npc.js';
+import { factionSystem } from './factions.js';
 import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
 import { dayNight } from './daynight.js';
 import { survival } from './survival.js';
@@ -55,7 +57,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [dayNight, survival, zombieSystem, interactSystem, locationSystem, uiSystem];
+  G.systems = [dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
