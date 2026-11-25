@@ -5,6 +5,7 @@ import { addInteractable } from './interact.js';
 import { spawnGroup } from './zombies.js';
 import { toast } from './ui.js';
 import { rng } from './util.js';
+import { toon } from './style.js';
 
 // The places to explore. "type" decides buildings and loot.
 export const LOCATIONS = [
@@ -32,11 +33,11 @@ const LOOT = {
 };
 
 const mats = {};
-const M = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c }));
+const M = c => mats[c] || (mats[c] = toon(c));
 export const buildings = [];   // {x,z,hw,hd,roof} — roofs hide when you walk inside
 
 // Hollow building with a door gap in the front (+z) wall.
-function building(scene, x, z, w, d, h, color, roofColor = 0x3b2f2a) {
+function building(scene, x, z, w, d, h, color, roofColor = 0xc0574a) {
   const y = heightAt(x, z), T = 0.3, door = 2.2;
   const g = new THREE.Group(); g.position.set(x, y, z);
   const wall = (wx, wz, ww, wd) => {
@@ -109,7 +110,7 @@ export function buildLocations(scene) {
         const spots = [[-22, -18], [0, -20], [22, -18], [-24, 12], [24, 12], [-6, 22], [12, 26]];
         for (const [dx, dz] of spots) {
           const w = 7 + r() * 3, d = 6 + r() * 2;
-          building(scene, L.x + dx, L.z + dz, w, d, 3.2, [0xb7a07a, 0x8e9aa6, 0xa36b55, 0xc2b8a3][Math.floor(r() * 4)]);
+          building(scene, L.x + dx, L.z + dz, w, d, 3.2, [0xf2d6a2, 0xa8c8e8, 0xe8a598, 0xf4efe4][Math.floor(r() * 4)], [0xc0574a, 0x4a6fa5, 0x5a8f5a, 0x8a5a9f][Math.floor(r() * 4)]);
           crate(scene, id(), L.x + dx + (r() - 0.5) * (w - 3), L.z + dz - d / 4, 'town');
         }
         for (let i = 0; i < 4; i++) car(scene, L.x - 30 + i * 18 + r() * 5, L.z - 3 + r() * 4, r() * 6, [0x7a2020, 0x204a7a, 0x777777, 0x2f5a2f][i]);

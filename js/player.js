@@ -1,12 +1,13 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
 import { input, down, updateMoveFromKeys } from './input.js';
-import { heightAt, collide } from './world.js';
+import { heightAt, collide, inWater } from './world.js';
+import { WATER } from './world.js';
 import { makeHuman, animateHuman } from './characters.js';
 import { clamp } from './util.js';
 
 export function createPlayer() {
-  const mesh = makeHuman({ shirt: 0x6b4a2b, pants: 0x2f3a45, skin: 0x8d5a3b });
+  const mesh = makeHuman({ shirt: 0xc0603a, pants: 0x34495e, skin: 0x8d5a3b });
   G.scene.add(mesh);
   const s = G.save.player;
   mesh.position.set(s.x, heightAt(s.x, s.z), s.z);
@@ -32,7 +33,7 @@ export function updatePlayer(dt) {
 
   // Movement relative to camera
   const sprint = down('sprint') && (P.canSprint ? P.canSprint() : true);
-  const maxSpeed = (sprint ? 8.5 : 4.6) * (P.speedMul || 1);
+  const maxSpeed = (sprint ? 8.5 : 4.6) * (P.speedMul || 1) * (inWater(P.pos.x, P.pos.z) ? 0.55 : 1);
   const fx = -Math.sin(P.camYaw), fz = -Math.cos(P.camYaw);
   const rx = -fz, rz = fx;
   let vx = (fx * -input.mz + rx * input.mx), vz = (fz * -input.mz + rz * input.mx);
@@ -49,7 +50,7 @@ export function updatePlayer(dt) {
   P.sprinting = sprint && P.moving;
   P.speed = mag * (sprint ? 1 : 0.55);
   collide(P.pos, P.radius);
-  P.pos.y = heightAt(P.pos.x, P.pos.z);
+  P.pos.y = Math.max(heightAt(P.pos.x, P.pos.z), WATER - 1.1);   // swim instead of sinking
   P.mesh.rotation.y = P.rot;
 
   if (P.attackT > 0) P.attackT = Math.max(0, P.attackT - dt * 3);

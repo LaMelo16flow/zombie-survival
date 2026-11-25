@@ -28,6 +28,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 - **v0.4** — factions: create your own (name, colour, belief), recruit survivors who follow and fight, claim a base (safe zone, daily food/water from guards, sleep), 3 rival factions (Riverside Haven, Iron Wolves, Order of the Signal) with leaders, guards, trading, reputation and alliances; hostile factions attack you
 - **v0.5** — branching story: 9 decision events (the radio, Dr. Okafor, the armory, the faction war, the Signal, Helix Lab, the cure, raids, sieges), faction side-jobs, karma, journal, and 5 endings (The Cure, Warlord, A New Dawn, The Signal's Choir, Lone Survivor)
 - **v0.6** — saving: autosave on the device every 30 s, plus Save/Load to GitHub (`saves/<slot>.json` in this repo, one commit per save), title screen Continue / Load, pause menu
+- **v0.7** — anime cel-shaded graphics: toon shading, ink outlines (post-process), painted sky with sun, puffy clouds and stars, sunrise/sunset colours and blue anime nights, lakes with foam and glints (you can swim), round and pine trees, grass and flowers, brighter buildings
 
 ## Saving to GitHub
 1. Create a fine-grained token: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → *Generate new token*.

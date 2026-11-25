@@ -1,4 +1,5 @@
 import * as THREE from '../lib/three.module.min.js';
+import { toon } from './style.js';
 
 // Low-poly humanoid used by the player, survivors and zombies.
 const box = (w, h, d, y = 0) => { const g = new THREE.BoxGeometry(w, h, d); g.translate(0, y, 0); return g; };
@@ -7,7 +8,7 @@ const GEO = {
   limbA: box(0.18, 0.66, 0.18, -0.3), limbL: box(0.22, 0.78, 0.22, -0.39)
 };
 const matCache = new Map();
-const mat = c => { if (!matCache.has(c)) matCache.set(c, new THREE.MeshLambertMaterial({ color: c })); return matCache.get(c); };
+const mat = c => { if (!matCache.has(c)) matCache.set(c, toon(c, { unique: true })); return matCache.get(c); };
 
 export function makeHuman({ skin = 0xc68e62, shirt = 0x37506b, pants = 0x2d2a26, hat = null } = {}) {
   const g = new THREE.Group();

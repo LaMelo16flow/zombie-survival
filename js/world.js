@@ -1,9 +1,12 @@
 import * as THREE from '../lib/three.module.min.js';
 import { rng, fbm, clamp } from './util.js';
+import { toon, merge } from './style.js';
 
 export const WORLD_SIZE = 1000;          // metres, square, centred on 0,0
 export const HALF = WORLD_SIZE / 2;
 const SEED = 1337;
+export const WATER = 5;                  // lakes fill everything below this height
+export const inWater = (x, z) => heightAt(x, z) < WATER - 0.4;
 
 // Flat areas (towns, bases) register here so the terrain levels out under them.
 export const flats = [];                 // {x, z, r, h}
@@ -12,7 +15,10 @@ function rawHeight(x, z) {
   const n = fbm(x / 180, z / 180, SEED, 4);
   const hills = Math.pow(n, 1.6) * 38;
   const edge = Math.max(0, (Math.max(Math.abs(x), Math.abs(z)) - (HALF - 60)) / 60); // mountains at the border
-  return hills + edge * edge * 60;
+  let h = hills + edge * edge * 60;
+  const d = (WATER + 1.5) - h;           // dig lakes deeper so shores are crisp
+  if (d > 0) h -= d * d * 0.9;
+  return h;
 }
 
 export function heightAt(x, z) {
@@ -72,9 +78,10 @@ export function collide(pos, r) {
   pos.x = clamp(pos.x, -lim, lim); pos.z = clamp(pos.z, -lim, lim);
 }
 
-/* ---------- Building the 3D world ---------- */
+/* ---------- Building the 3D world (anime style) ---------- */
+const GRASS = [new THREE.Color(0x6cb24e), new THREE.Color(0x86c35a), new THREE.Color(0x58a047)];
 export function buildTerrain(scene) {
-  const SEG = 200;
+  const SEG = 220;
   const geo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, SEG, SEG);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
@@ -84,51 +91,108 @@ export function buildTerrain(scene) {
     const x = pos.getX(i), z = pos.getZ(i);
     const h = heightAt(x, z);
     pos.setY(i, h);
-    const n = fbm(x / 25, z / 25, 99, 2);
-    if (h > 45) col.setRGB(0.42, 0.40, 0.37);                 // rock
-    else col.setRGB(0.20 + n * 0.12, 0.30 + n * 0.12 - h * 0.001, 0.13 + n * 0.05); // grass
-    for (const f of flats) if (Math.hypot(x - f.x, z - f.z) < f.r) col.setRGB(0.33 + n * 0.05, 0.31 + n * 0.05, 0.27);
+    const n = fbm(x / 40, z / 40, 99, 2);
+    // painted bands rather than smooth noise
+    if (h > 46) col.set(n > 0.5 ? 0xb9b2a6 : 0x9c958c);                // rock
+    else if (h > 38) col.set(0x7f9a5a);                                  // high meadow
+    else if (h < WATER + 0.9) col.set(h < WATER - 0.3 ? 0x6f8f8a : 0xe8d7a0); // lake bed / sand
+    else col.copy(GRASS[n < 0.42 ? 2 : n < 0.6 ? 0 : 1]);
+    for (const f of flats) { const d = Math.hypot(x - f.x, z - f.z); if (d < f.r) { const path = fbm(x / 9, z / 9, 7, 2); col.set(d < f.r * 0.8 && path > 0.55 ? 0xd8c08e : path > 0.4 ? 0x9cc760 : 0x86b955); } }
     colors.set([col.r, col.g, col.b], i * 3);
   }
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const mesh = new THREE.Mesh(geo, toon(0xffffff, { vertexColors: true }));
   mesh.receiveShadow = true;
   scene.add(mesh);
+  buildWater(scene);
   return mesh;
+}
+
+// Stylised water: deep/shallow colours, white foam where it meets the shore, moving glints.
+export const waterUniforms = { time: { value: 0 }, light: { value: 1 } };
+function buildWater(scene) {
+  const SEG = 220;
+  const geo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, SEG, SEG); geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position, depth = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++) depth[i] = WATER - heightAt(pos.getX(i), pos.getZ(i));
+  geo.setAttribute('depth', new THREE.BufferAttribute(depth, 1));
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, fog: true,
+    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), waterUniforms),
+    vertexShader: `attribute float depth; varying float vDepth; varying vec3 vW;
+      #include <fog_pars_vertex>
+      void main(){ vDepth = depth; vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz;
+        vec4 mvPosition = viewMatrix * w; gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `uniform float time; uniform float light; varying float vDepth; varying vec3 vW;
+      #include <fog_pars_fragment>
+      void main(){
+        if (vDepth < 0.0) discard;
+        vec3 shallow = vec3(0.35, 0.80, 0.85), deep = vec3(0.12, 0.42, 0.66);
+        vec3 c = mix(shallow, deep, smoothstep(0.3, 3.5, vDepth));
+        float wave = sin(vW.x * 0.35 + time * 1.3) * sin(vW.z * 0.31 - time * 1.1);
+        float glint = step(0.96, wave) * 0.45;
+        float foam = 1.0 - smoothstep(0.05, 0.22, vDepth + sin(vW.x * 0.8 + vW.z * 0.6 + time * 2.0) * 0.04);
+        c = mix(c + glint, vec3(1.0), foam);
+        c *= mix(vec3(0.16, 0.2, 0.42), vec3(1.0), light);
+        gl_FragColor = vec4(c, mix(0.82, 0.95, foam));
+        #include <fog_fragment>
+        #include <colorspace_fragment>
+      }`
+  });
+  const water = new THREE.Mesh(geo, mat);
+  water.position.y = WATER;
+  water.renderOrder = 1;
+  scene.add(water);
 }
 
 export function buildForest(scene, avoid = () => false) {
   const r = rng(SEED + 7);
-  const COUNT = 2600;
-  const trunkGeo = new THREE.CylinderGeometry(0.25, 0.35, 3, 6); trunkGeo.translate(0, 1.5, 0);
-  const leafGeo = new THREE.ConeGeometry(2, 5.5, 7); leafGeo.translate(0, 5.2, 0);
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x4a3526 }), COUNT);
-  const leaves = new THREE.InstancedMesh(leafGeo, new THREE.MeshLambertMaterial({ color: 0xffffff }), COUNT);
-  trunks.castShadow = leaves.castShadow = true;
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
-  const c = new THREE.Color();
-  let n = 0;
-  for (let tries = 0; n < COUNT && tries < COUNT * 6; tries++) {
+  const dry = (x, z) => heightAt(x, z) > WATER + 0.8;
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), c = new THREE.Color();
+  const up = new THREE.Vector3(0, 1, 0);
+
+  // Two tree shapes: tall pines and round "anime" broadleaf trees
+  const trunkGeo = new THREE.CylinderGeometry(0.22, 0.38, 3.2, 7); trunkGeo.translate(0, 1.6, 0);
+  const pineGeo = merge([
+    new THREE.ConeGeometry(2.3, 3.6, 8).translate(0, 3.6, 0),
+    new THREE.ConeGeometry(1.8, 3.0, 8).translate(0, 5.3, 0),
+    new THREE.ConeGeometry(1.2, 2.4, 8).translate(0, 6.8, 0)
+  ]);
+  const roundGeo = merge([
+    new THREE.IcosahedronGeometry(2.2, 1).translate(0, 4.6, 0),
+    new THREE.IcosahedronGeometry(1.6, 1).translate(1.5, 4.0, 0.4),
+    new THREE.IcosahedronGeometry(1.5, 1).translate(-1.3, 4.2, -0.6),
+    new THREE.IcosahedronGeometry(1.4, 1).translate(0.2, 5.9, 0.3)
+  ]);
+  const N = 1500;
+  const trunks = new THREE.InstancedMesh(trunkGeo, toon(0x7a5236), N * 2);
+  const pines = new THREE.InstancedMesh(pineGeo, toon(0xffffff), N);
+  const rounds = new THREE.InstancedMesh(roundGeo, toon(0xffffff), N);
+  let nt = 0, np = 0, nr = 0;
+  for (let tries = 0; (np + nr) < N * 1.7 && tries < N * 10; tries++) {
     const x = (r() - 0.5) * (WORLD_SIZE - 40), z = (r() - 0.5) * (WORLD_SIZE - 40);
-    const density = fbm(x / 120, z / 120, SEED + 3, 2);   // clumps of forest
-    if (density < 0.48 || avoid(x, z) || Math.hypot(x, z) < 15) continue;
+    const density = fbm(x / 120, z / 120, SEED + 3, 2);
+    if (density < 0.48 || avoid(x, z) || Math.hypot(x, z) < 15 || !dry(x, z)) continue;
     const h = heightAt(x, z);
     if (h > 50) continue;
-    const sc = 0.7 + r() * 0.8;
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * 6.28);
+    const sc = 0.75 + r() * 0.7;
+    q.setFromAxisAngle(up, r() * 6.28);
     m.compose(p.set(x, h - 0.2, z), q, s.set(sc, sc, sc));
-    trunks.setMatrixAt(n, m); leaves.setMatrixAt(n, m);
-    leaves.setColorAt(n, c.setHSL(0.28 + r() * 0.07, 0.45, 0.24 + r() * 0.1));
+    const pine = h > 22 || r() < 0.45;
+    if (pine && np < N) { pines.setMatrixAt(np, m); pines.setColorAt(np++, c.setHSL(0.36 + r() * 0.05, 0.55, 0.32 + r() * 0.08)); }
+    else if (!pine && nr < N) { rounds.setMatrixAt(nr, m); rounds.setColorAt(nr++, c.setHSL(0.22 + r() * 0.1, 0.6, 0.42 + r() * 0.1)); }
+    else continue;
+    trunks.setMatrixAt(nt++, m);
     addCircle(x, z, 0.5 * sc);
-    n++;
   }
-  trunks.count = leaves.count = n;
-  scene.add(trunks, leaves);
+  trunks.count = nt; pines.count = np; rounds.count = nr;
+  for (const t of [trunks, pines, rounds]) { t.castShadow = true; scene.add(t); }
 
   // Rocks
-  const rockGeo = new THREE.DodecahedronGeometry(1, 0);
-  const rocks = new THREE.InstancedMesh(rockGeo, new THREE.MeshLambertMaterial({ color: 0x6d6a63 }), 400);
+  const rocks = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1, 0), toon(0xa7a196), 400);
   let k = 0;
   for (let i = 0; i < 400; i++) {
     const x = (r() - 0.5) * (WORLD_SIZE - 40), z = (r() - 0.5) * (WORLD_SIZE - 40);
@@ -141,4 +205,23 @@ export function buildForest(scene, avoid = () => false) {
   }
   rocks.count = k; rocks.castShadow = true;
   scene.add(rocks);
+
+  // Grass tufts and flowers
+  const blade = merge([0, 1, 2].map(i => new THREE.ConeGeometry(0.09, 0.7, 3, 1, true).translate(Math.cos(i * 2.1) * 0.15, 0.35, Math.sin(i * 2.1) * 0.15).rotateY(i)));
+  const G = ('ontouchstart' in window) ? 8000 : 16000, grass = new THREE.InstancedMesh(blade, toon(0xffffff), G);
+  const flowers = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.14, 0).translate(0, 0.55, 0), toon(0xffffff), 3000);
+  const PETALS = [0xff8fb1, 0xffffff, 0xffe066, 0xb39cff, 0xff6b6b];
+  let g = 0, f = 0;
+  for (let i = 0; i < G * 2 && g < G; i++) {
+    const x = (r() - 0.5) * (WORLD_SIZE - 60), z = (r() - 0.5) * (WORLD_SIZE - 60);
+    const h = heightAt(x, z);
+    if (h < WATER + 1 || h > 40 || avoid(x, z)) continue;
+    const sc = 0.7 + r() * 0.9;
+    q.setFromAxisAngle(up, r() * 6.28);
+    m.compose(p.set(x, h, z), q, s.set(sc, sc, sc));
+    grass.setMatrixAt(g, m); grass.setColorAt(g++, c.setHSL(0.25 + r() * 0.06, 0.6, 0.38 + r() * 0.12));
+    if (f < 3000 && r() < 0.2) { m.compose(p.set(x + 0.3, h, z + 0.2), q, s.set(1, 1, 1)); flowers.setMatrixAt(f, m); flowers.setColorAt(f++, c.set(PETALS[Math.floor(r() * PETALS.length)])); }
+  }
+  grass.count = g; flowers.count = f;
+  scene.add(grass, flowers);
 }

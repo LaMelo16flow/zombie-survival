@@ -1,7 +1,8 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G, VERSION, newSave } from './state.js';
 import { initInput, endFrame, input } from './input.js';
-import { buildTerrain, buildForest } from './world.js';
+import { buildTerrain, buildForest, waterUniforms } from './world.js';
+import { Outline, createSky } from './style.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD, uiSystem } from './ui.js';
 import { interactSystem } from './interact.js';
@@ -18,21 +19,23 @@ const canvas = document.getElementById('game');
 document.getElementById('ver').textContent = 'v' + VERSION;
 
 function initRenderer() {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: devicePixelRatio < 2 });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, ('ontouchstart' in window) ? 1.25 : 1.5));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   G.renderer = renderer;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x9fb3b8);
-  scene.fog = new THREE.Fog(0x9fb3b8, 40, 220);
+  scene.fog = new THREE.Fog(0xc4ecff, 60, 260);
   G.scene = scene;
+  G.sky = createSky(scene);
+  G.water = waterUniforms;
+  G.outline = new Outline(renderer);
 
-  G.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 600);
+  G.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.3, 1100);
 
-  G.hemi = new THREE.HemisphereLight(0xcfd8dc, 0x3a3326, 0.9);
+  G.hemi = new THREE.HemisphereLight(0xdff2ff, 0x4a5a2a, 0.9);
   scene.add(G.hemi);
   const sun = new THREE.DirectionalLight(0xfff1d6, 1.6);
   sun.castShadow = true;
@@ -43,6 +46,7 @@ function initRenderer() {
 
   addEventListener('resize', () => {
     renderer.setSize(innerWidth, innerHeight);
+    G.outline.setSize();
     G.camera.aspect = innerWidth / innerHeight; G.camera.updateProjectionMatrix();
   });
 }
@@ -76,11 +80,12 @@ function loop(now) {
     for (const s of G.systems) s.update(dt);
     // keep the shadow camera around the player
     const p = G.player.pos;
-    G.sun.position.set(p.x + 40, p.y + 80, p.z + 25); G.sun.target.position.copy(p);
+    G.sun.position.copy(p).addScaledVector(G.sunDir, 100); G.sun.target.position.copy(p);
     updateHUD(dt);
   }
   endFrame();
-  G.renderer.render(G.scene, G.camera);
+  if (!G.running) { G.time += dt; G.sky.update(G.camera, dt); G.water.time.value += dt; G.camera.position.set(Math.sin(G.time * 0.05) * 60, 30, Math.cos(G.time * 0.05) * 60); G.camera.lookAt(0, 8, 0); }
+  G.outline.render(G.scene, G.camera);
 }
 
 initRenderer();

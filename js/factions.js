@@ -6,6 +6,7 @@ import { addInteractable, removeInteractable } from './interact.js';
 import { spawnNPC, removeNPC, npcs, randomName } from './npc.js';
 import { heightAt, addCircle } from './world.js';
 import { toast, showChoice, showModal, closeModal, esc } from './ui.js';
+import { toon } from './style.js';
 
 export const FACTIONS = {
   haven:  { name: 'Riverside Haven', leader: 'Mara', shirt: 0x5a7a4a, css: '#7fb069', loc: 'haven',
@@ -197,11 +198,11 @@ const claimable = L => !L.faction && G.save.world.discovered.includes(L.id) && !
 function buildBaseVisuals(L) {
   const mine = G.save.factions.player;
   const g = new THREE.Group();
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 7, 6), new THREE.MeshLambertMaterial({ color: 0x777777 })); pole.position.y = 3.5;
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.3), new THREE.MeshLambertMaterial({ color: mine.color, side: THREE.DoubleSide })); flag.position.set(1.1, 6.2, 0);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 7, 6), toon(0x9a9a9a)); pole.position.y = 3.5;
+  const flag = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.3), toon(new THREE.Color(mine.color).getHex(), { side: THREE.DoubleSide })); flag.position.set(1.1, 6.2, 0);
   g.add(pole, flag); g.position.set(L.x + 3, heightAt(L.x + 3, L.z + 3), L.z + 3); G.scene.add(g);
   addCircle(L.x + 3, L.z + 3, 0.3);
-  const mat = new THREE.MeshLambertMaterial({ color: 0x6b4f33 });
+  const mat = toon(0x8a6342);
   for (let i = 0; i < 14; i++) {
     if (i === 0) continue;
     const a = i / 14 * Math.PI * 2, R = L.r + 4, x = L.x + Math.sin(a) * R, z = L.z + Math.cos(a) * R;
