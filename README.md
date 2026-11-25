@@ -23,6 +23,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 | Build mode (Z category, 1-7 pick, T rotate, F place, X remove) | B | BUILD |
 | Crafting | C | CRAFT |
 | Skills | K | SKILLS |
+| Missions | O | QUESTS |
 | Drive: get in/out · gas/brake · steer · horn | E · W/S · A/D · F | USE · stick · HIT |
 
 ## Build log
@@ -44,6 +45,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 - **v0.16** — explorable buildings: Pine Hollow houses now have rooms and furniture to search (beds, fridges, shelves, sofas); three new two-storey places with real stairs — Kessler County Police (lockers with guns and riot gear), Hillside Apartments, Pine Valley School; upper floors and roofs hide while you're inside
 - **v0.17** — new zombies: screamers (call the horde), exploders (blow up when close or killed), armoured riot zombies (only heavy hits get through), crawlers; bosses with health bars: The Colonel at Fort Kessler (charges, ground slams, calls soldiers) and Patient Zero at Helix Lab (teleports, spits acid, calls runners) — big rewards, and killing Patient Zero weakens every zombie
 - **v0.18** — character creator (name, skin, hairstyle and colour, jacket, trousers, live 3D preview) with 5 backgrounds (Fighter, Scavenger, Medic, Hunter, Mechanic) that give a starting kit and bonus; XP and levels (+5 max health each) from kills, bosses, hunting, gathering, crafting, building, exploring; skill tree with 6 skills in Combat / Survival / Crafting
+- **v0.19** — missions: 3-part story chains from each faction leader (Haven: medicine run → rescue the lost scout → defend the Haven; Iron Wolves: fuel → riot zombies → take Fort Kessler; Order: screamers → the old radio → Patient Zero), side missions from survivors (clear hordes, hunt, deliver, rescue + escort a friend who then joins you), tracked mission with a gold beacon, minimap star and HUD tracker; story chapters (Outbreak → Factions at War → The Source → The Last Signal) and 2 new endings (Evacuation, The New World)
 
 ## Saving to GitHub
 1. Create a fine-grained token: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → *Generate new token*.

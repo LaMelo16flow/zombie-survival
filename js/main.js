@@ -18,6 +18,7 @@ import { gatherSystem } from './gather.js';
 import { animalSystem } from './animals.js';
 import { bossSystem } from './boss.js';
 import { characterSystem, openCreator, animatePreview, PERKS } from './character.js';
+import { missionSystem } from './missions.js';
 import { sfx, unlock } from './audio.js';
 import { storageSystem, loadLocal, takeBootSave, openLoadList, openSettings, clearLocal } from './storage.js';
 import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
@@ -73,7 +74,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, uiSystem];
+  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;

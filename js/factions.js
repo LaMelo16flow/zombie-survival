@@ -81,6 +81,7 @@ export function talkToLeader(f) {
   if (mine && rel !== 'ally') choices.push({ label: `Propose an alliance with ${esc(mine.name)}`, note: 'Needs them to be friendly (30+)', disabled: rel !== 'friendly', fn: () => {
     fs.allies.push(f); toast(`<b>${F.name}</b> is now your ally!`, 3); G.emit('alliance', f);
   } });
+  const mc = G.missions?.leaderChoice(f); if (mc) choices.unshift(mc);
   choices.push({ label: 'Leave' });
   showChoice(`${F.leader} — ${F.name}`, `<i>${F.about}</i><br><br>"${greet}"<br><small>Reputation: ${fs.rep[f]} (${rel})</small>`, choices);
 }
@@ -116,6 +117,7 @@ function talkToWanderer(n) {
       setTimeout(() => removeNPC(n), 15000);
       G.emit('robbed', n);
     } },
+    ...[G.missions?.wandererChoice(n)].filter(Boolean),
     { label: 'Leave' }
   ]);
 }

@@ -10,7 +10,7 @@ const KEYMAP = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   ShiftLeft: 'sprint', ShiftRight: 'sprint', KeyE: 'interact', KeyF: 'attack', Space: 'attack', KeyR: 'shoot',
   KeyB: 'build', KeyM: 'map', KeyQ: 'faction', KeyJ: 'journal', KeyI: 'inventory', Escape: 'menu', KeyP: 'menu',
-  Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', Digit4: 'slot4', Digit5: 'slot5', Digit6: 'slot6', Digit7: 'slot7', Digit8: 'slot8', Digit9: 'slot9', KeyC: 'craft', KeyZ: 'nextcat', KeyK: 'skills',
+  Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', Digit4: 'slot4', Digit5: 'slot5', Digit6: 'slot6', Digit7: 'slot7', Digit8: 'slot8', Digit9: 'slot9', KeyC: 'craft', KeyZ: 'nextcat', KeyK: 'skills', KeyO: 'missions',
   KeyG: 'command', KeyT: 'rotate', KeyX: 'demolish'
 };
 
@@ -89,12 +89,22 @@ function initTouch() {
 }
 
 // Add an on-screen button (touch only). action = name used with pressed()/down().
+const PRIMARY = ['inventory', 'map', 'craft', 'build', 'missions'];   // always shown; the rest are under MORE
 export function addTouchButton(label, action, small = false) {
   if (!isTouch) return;
   const b = document.createElement('div');
   b.className = small ? 'tb sm' : 'tb'; b.textContent = label;
   b.addEventListener('touchstart', e => { e.preventDefault(); b.classList.add('on'); press(action); }, { passive: false });
   b.addEventListener('touchend', e => { e.preventDefault(); b.classList.remove('on'); release(action); }, { passive: false });
-  document.getElementById(small ? 'topbtns' : 'buttons').appendChild(b);
+  const wrap = document.getElementById(small ? 'topbtns' : 'buttons');
+  if (small && !PRIMARY.includes(action)) {
+    b.classList.add('more');
+    if (!wrap.querySelector('.moretoggle')) {
+      const t = document.createElement('div'); t.className = 'tb moretoggle'; t.textContent = 'MORE';
+      t.addEventListener('touchstart', e => { e.preventDefault(); wrap.classList.toggle('open'); t.textContent = wrap.classList.contains('open') ? 'LESS' : 'MORE'; }, { passive: false });
+      wrap.appendChild(t);
+    }
+  }
+  wrap.insertBefore(b, wrap.querySelector('.moretoggle'));
   return b;
 }

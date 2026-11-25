@@ -81,12 +81,12 @@ export const npcSystem = {
         continue;
       }
       const dP = Math.hypot(P.pos.x - n.pos.x, P.pos.z - n.pos.z);
-      if (dP > 220 && n.role !== 'member') { n.mesh.visible = false; continue; }   // sleep far away
+      if (dP > 220 && n.role !== 'member' && !(n.role === 'escort' && n.mode === 'follow')) { n.mesh.visible = false; continue; }   // sleep far away
       n.mesh.visible = true;
       n.cd -= dt; n.attackT = Math.max(0, n.attackT - dt * 3); n.speed = 0;
       const zt = nearestZombie(n, n.role === 'wanderer' ? 6 : 16);
 
-      if (n.role === 'member' && n.mode === 'follow') {
+      if ((n.role === 'member' || n.role === 'escort') && n.mode === 'follow') {
         if (zt && attack(n, zt.z, zt.d)) { n.rot = Math.atan2(zt.z.pos.x - n.pos.x, zt.z.pos.z - n.pos.z); }
         else if (zt && zt.d < 14) moveToward(n, zt.z.pos.x, zt.z.pos.z, 4.5, dt);
         else if (dP > 3.5) moveToward(n, P.pos.x, P.pos.z, dP > 12 ? 8.5 : (P.sprinting ? 8 : 4.6), dt);

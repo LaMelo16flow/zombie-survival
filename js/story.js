@@ -124,6 +124,15 @@ const EVENTS = [
     ], { lock: true })
   },
   {
+    id: 'lastSignal', when: () => G.save.world.bosses?.colonel === 'dead' && G.save.world.bosses?.zero === 'dead',
+    run: () => showChoice('Chapter 4 — The Last Signal', `A real voice cuts through the static — not the Helix machine this time. <i>"This is the 4th Recovery Group. We heard Fort Kessler and Helix Lab have gone quiet. One helicopter. It lands at the Radio Tower at dawn. Room for one."</i>`, [
+      { label: 'Take the helicopter and leave', note: 'Ends your story here', fn: () => { flag('evac'); log('Chose to leave on the helicopter.'); } },
+      { label: 'Stay and rebuild', note: 'Your people need you', fn: () => { flag('stay'); karma(2); log('Chose to stay and rebuild.'); toast('Build a home: a base, 6 members and an ally.', 4); } },
+      { label: 'Give the frequency to every faction', note: 'Everyone learns help exists — and you stay', fn: () => { flag('stay'); flag('shared'); karma(5);
+        for (const f of ['haven', 'wolves', 'order']) if (relation(f) !== 'gone') changeRep(f, 20); log('Shared the rescue frequency with every faction.'); } }
+    ], { lock: true })
+  },
+  {
     id: 'siege', when: () => mine()?.base && day() >= 5 && !S().flags.siegeDone && G.save.world.hour > 20,
     run: () => {
       const b = loc(mine().base); S().flags.siegeDone = true;
@@ -156,6 +165,10 @@ export function offerWork(f) {
 
 /* ---------- Endings ---------- */
 const ENDINGS = [
+  { id: 'evac', title: 'Evacuation', when: () => has('evac'),
+    text: () => `The helicopter lifts off at dawn. Below you, the world you survived shrinks to a green smudge. ${mine() ? esc(mine().name) + ' will have to go on without you.' : 'You never look back.'}` },
+  { id: 'newworld', title: 'The New World', when: () => has('stay') && mine()?.base && (mine()?.members.length || 0) >= 6 && G.save.factions.allies.length >= 1,
+    text: () => `${esc(mine().name)} becomes the heart of a new world — walls, gardens, children, and a radio that tells strangers where to find safety.${has('shared') ? ' Because you shared the frequency, even the Wolves come to trade instead of raid.' : ''}` },
   { id: 'cure', title: 'The Cure', when: () => S().flags.cureDay && day() >= S().flags.cureDay && (S().flags.cureAt === 'base' ? !!mine()?.base : relation('haven') !== 'gone'),
     text: () => `Dr. Okafor's vaccine works. The first injected survivor is bitten — and lives. ${S().flags.cureAt === 'base' ? esc(mine().name) + ' becomes the place the whole region comes to for hope.' : 'Riverside Haven shares it with everyone who asks.'} The dead will not win.` },
   { id: 'warlord', title: 'Warlord', when: () => (relation('haven') === 'gone' && (G.save.factions.rep.wolves >= 60 || S().flags.cureSold) && mine()?.members.length >= 4) || (G.save.factions.leadersKilled.length >= 2 && mine()?.members.length >= 4),
@@ -192,9 +205,12 @@ function hints() {
   if (S().flags.cureDay && day() < S().flags.cureDay) h.push(`Protect the vaccine work until day ${S().flags.cureDay}.`);
   return h;
 }
+const CHAPTERS = ['', 'Outbreak', 'Factions at War', 'The Source', 'The Last Signal'];
+function chapter() { return S().done.lastSignal ? 4 : (S().done.lab || has('cable') || has('truth')) ? 3 : (S().done.war || day() >= 3) ? 2 : 1; }
 export function openJournal() {
   const L = S().log.slice().reverse().map(e => `<div class="row"><span>Day ${e.day}</span><span style="text-align:right;max-width:75%">${e.text}</span></div>`).join('') || '<p>Nothing yet.</p>';
-  showModal(`<div class="panel"><h2>Journal</h2><h3>Goals</h3><ul>${hints().map(x => `<li>${x}</li>`).join('') || '<li>Survive.</li>'}</ul>
+  const tm = G.missions?.tracked();
+  showModal(`<div class="panel"><h2>Journal — Chapter ${chapter()}: ${CHAPTERS[chapter()]}</h2>${tm ? `<h3>Tracked mission</h3><p><b>${tm.title}</b> — ${G.missions.objectiveText(tm)}</p>` : ''}<h3>Goals</h3><ul>${hints().map(x => `<li>${x}</li>`).join('') || '<li>Survive.</li>'}</ul>
     <h3>Your decisions</h3>${L}<p style="opacity:.6;font-size:12px">Endings found: ${S().endings.join(', ') || 'none yet'}</p>
     <button class="primary" id="j-close">Close</button></div>`);
   document.getElementById('j-close').onclick = closeModal;
@@ -204,7 +220,7 @@ export function openJournal() {
 let checkT = 0;
 export const storySystem = {
   init() {
-    G.story = { offerWork, log };
+    G.story = { offerWork, log }; G.openJournal = openJournal;
     addTouchButton('LOG', 'journal', true);
     G.on('newDay', () => { if (S().flags.hordeUntil && day() >= S().flags.hordeUntil) { delete G.save.world.mods.density; delete S().flags.hordeUntil; } });
     G.on('leaderKilled', f => log(`Killed ${FACTIONS[f].leader}, leader of ${FACTIONS[f].name}.`));
@@ -219,6 +235,7 @@ export const storySystem = {
     const doc = members().find(n => n.data.special === 'doctor');
     if (doc && Math.hypot(doc.pos.x - G.player.pos.x, doc.pos.z - G.player.pos.z) < 6) { const s = G.save.stats; s.hp = Math.min(s.maxHp, s.hp + dt * 1.5); }
     checkT -= dt; if (checkT > 0) return; checkT = 0.5;
+    const ch = chapter(); if (ch > (S().chapter || 1)) { S().chapter = ch; G.banner?.(CHAPTERS[ch], 'CHAPTER ' + ch, 4); }
     for (const E of EVENTS) if (!S().done[E.id] && E.when()) { S().done[E.id] = day(); E.run(); return; }
     for (const E of ENDINGS) if (!S().endings.includes(E.id) && E.when()) { showEnding(E); return; }
   }

@@ -153,6 +153,9 @@ function drawMinimap() {
   for (const zb of G.zombieList?.() || []) if (zb.alive) dot(zb.pos.x, zb.pos.z, '#e8364a', zb.k.scale ? 5 : 3.5);
   for (const n of G.npcList?.() || []) if (n.alive) dot(n.pos.x, n.pos.z, n.role === 'member' ? '#4aa3ff' : (G.relation && n.faction && G.relation(n.faction) === 'hostile') ? '#ff8a3a' : '#7ad35a', 4);
   for (const v of G.vehicleList?.() || []) dot(v.pos.x, v.pos.z, '#ffc94a', 5);
+  if (G.missionTarget) { const [sx, sy] = put(G.missionTarget.x, G.missionTarget.z), dd = Math.hypot(sx - R, sy - R), k2 = dd > R - 10 ? (R - 10) / dd : 1;
+    const mx = R + (sx - R) * k2, my = R + (sy - R) * k2; c.fillStyle = '#ffc94a'; c.strokeStyle = '#15121c'; c.lineWidth = 2; c.beginPath();
+    for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - Math.PI / 2, rr = i % 2 ? 3.5 : 8; c.lineTo(mx + Math.cos(a) * rr, my + Math.sin(a) * rr); } c.closePath(); c.fill(); c.stroke(); }
   for (const a of G.animalList?.() || []) if (a.alive) dot(a.pos.x, a.pos.z, a.kind === 'wolf' || a.kind === 'boar' ? '#c9372c' : '#e8d7a0', 3);
   c.restore();
   // you

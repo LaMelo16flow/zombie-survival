@@ -184,3 +184,13 @@ input:focus, select:focus { border-color: var(--teal); outline: none; }
 #xp { position: absolute; left: 4px; right: 4px; bottom: -12px; height: 5px; background: rgba(21,18,28,.7); border-radius: 3px; overflow: hidden; }
 #xp i { display: block; height: 100%; background: var(--gold); width: 0; }
 .xpbar { height: 10px; background: var(--ink); border-radius: 6px; overflow: hidden; margin: 6px 0 10px; } .xpbar i { display: block; height: 100%; background: var(--gold); }
+
+/* ---------- Mission tracker ---------- */
+#mission { position: absolute; left: max(10px, env(safe-area-inset-left)); top: calc(max(10px, env(safe-area-inset-top)) + 84px); max-width: 260px;
+  background: rgba(21,18,28,.72); border-left: 4px solid var(--gold); padding: 6px 12px; border-radius: 0 10px 10px 0; font-size: 12px; }
+#mission b { display: block; color: var(--gold); font: 400 13px var(--title); }
+#mission span { font-weight: 700; }
+@media (max-width: 600px) { #mission { top: calc(max(10px, env(safe-area-inset-top)) + 76px); max-width: 190px; } }
+#topbtns .tb.more { display: none; }
+#topbtns.open .tb.more { display: flex; }
+#topbtns .tb.moretoggle { background: var(--gold); color: var(--ink); }
