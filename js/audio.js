@@ -91,7 +91,31 @@ export const sfx = {
   night() { if (!ctx) return; const t = now(); [220, 207.6, 196].forEach((f, i) => tone(f, 1.2, { type: 'sawtooth', gain: 0.07, t: t + i * 0.35, a: 0.3, bus: musicBus })); },
   death() { if (!ctx) return; const t = now(); [392, 349, 311, 262].forEach((f, i) => tone(f, 0.9, { type: 'triangle', gain: 0.2, t: t + i * 0.3, a: 0.05, bus: musicBus })); },
   thunder(delay = 0) { if (!ctx) return; const t = now() + delay; noise(2.8, { type: 'lowpass', freq: 260, q: 0.5, gain: 0.9, a: 0.05, bus: ambBus, t, sweep: 0.4 }); noise(0.4, { type: 'lowpass', freq: 1200, gain: 0.4, t, bus: ambBus }); },
-  engine: null
+  horn() { if (!ctx) return; tone(392, 0.35, { type: 'square', gain: 0.12 }); tone(494, 0.35, { type: 'square', gain: 0.1 }); }
+};
+
+/* ---------- Engine (one running engine at a time) ---------- */
+let eng = null;
+export const engine = {
+  start() {
+    if (!ctx || eng) return;
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 40;
+    const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = 20;
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 400; f.Q.value = 2;
+    const g = ctx.createGain(); g.gain.value = 0;
+    const g2 = ctx.createGain(); g2.gain.value = 0.4;
+    o.connect(f); o2.connect(g2); g2.connect(f); f.connect(g); g.connect(sfxBus); o.start(); o2.start();
+    g.gain.linearRampToValueAtTime(0.18, now() + 0.4);
+    eng = { o, o2, f, g };
+    noise(0.4, { type: 'lowpass', freq: 300, gain: 0.4 });  // ignition
+  },
+  set(speed, throttle) {
+    if (!eng) return;
+    const rpm = 40 + Math.abs(speed) * 4 + throttle * 25;
+    eng.o.frequency.value = rpm; eng.o2.frequency.value = rpm / 2; eng.f.frequency.value = 300 + rpm * 6;
+    eng.g.gain.value = 0.12 + throttle * 0.1;
+  },
+  stop() { if (!eng) return; const e = eng; eng = null; e.g.gain.linearRampToValueAtTime(0.0001, now() + 0.3); setTimeout(() => { e.o.stop(); e.o2.stop(); }, 400); }
 };
 
 /* ---------- Music: procedural pads + arpeggio + combat drums ---------- */

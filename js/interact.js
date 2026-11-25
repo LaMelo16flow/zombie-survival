@@ -15,6 +15,7 @@ export const interactSystem = {
   init() { addTouchButton('USE', 'interact'); },
   update() {
     const P = G.player;
+    if (G.driving) { promptEl().style.display = 'none'; return; }
     let best = null, bd = 1e9;
     for (const o of interactables) {
       if (o.enabled && !o.enabled()) continue;

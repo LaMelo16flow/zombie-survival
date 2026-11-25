@@ -21,6 +21,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 | Journal (goals + your decisions) | J | LOG |
 | Pause / save / load | P | MENU |
 | Build mode (1-7 pick, T rotate, F place, X remove) | B | BUILD |
+| Drive: get in/out · gas/brake · steer · horn | E · W/S · A/D · F | USE · stick · HIT |
 
 ## Build log
 - **v0.1** — 3D open world (1 km²), third-person character, camera, PC + touch controls
@@ -34,6 +35,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 - **v0.9** — anime menus & HUD: comic-style title screen, slanted HP/food/water/stamina bars with damage trail, portrait with health ring, clock with sun/moon, rotating minimap (zombies, people, lakes), painted world map, cinematic place/day banners, visual-novel dialog boxes (number keys pick choices), backpack item cards, floating damage numbers, restyled touch buttons
 - **v0.10** — sound & atmosphere: live-synthesised music (calm pads by day, darker at night, drums kick in when zombies chase you), swings, hits, gunshots, footsteps (splashes in water), zombie groans from the left/right, pickups, rain, wind, thunder, night crickets; weather (clear, cloudy, rain, storm with lightning, fog) that changes over time — rain and fog make zombies see less; fireflies on clear nights; music/sound toggles in the pause menu
 - **v0.11** — base building: walls (snap together), doors, spike traps, campfires (light + healing), beds (sleep), workbench (craft ammo, meds, machete, pistol, rifle), storage boxes; zombies claw through walls and doors, so defend and rebuild; everything you build is saved (and to GitHub)
+- **v0.12** — vehicles: 8 cars and pickup trucks around the map, arcade driving with suspension tilt and headlights, engine sound, fuel (fuel cans + the gas station pump), crash damage, wrecks you can repair with scrap, run over zombies; vehicle position, fuel and damage are saved
 
 ## Saving to GitHub
 1. Create a fine-grained token: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → *Generate new token*.

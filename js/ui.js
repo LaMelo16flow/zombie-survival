@@ -74,7 +74,7 @@ export function initHUD() {
 export function showDeath(cause) {
   const s = G.save;
   showModal(`<div class="panel center death"><h2>YOU DIED</h2>
-    <p>${cause === 'zombie' ? 'The dead got you.' : cause === 'starving' ? 'Hunger and thirst took you.' : cause === 'raider' ? 'Raiders cut you down.' : 'You did not make it.'}</p>
+    <p>${cause === 'zombie' ? 'The dead got you.' : cause === 'starving' ? 'Hunger and thirst took you.' : cause === 'raider' ? 'Raiders cut you down.' : cause === 'crash' ? 'You crashed.' : 'You did not make it.'}</p>
     <p>Survived to day ${s.world.day} · ${s.stats.kills} zombies killed</p>
     <button class="primary" id="d-again">Start again</button> <button id="d-load">Load last save</button></div>`);
   G.lockModal = true;
@@ -101,6 +101,7 @@ export function updateHUD(dt) {
     <div class="s"><span>${icon('skull')}${st.kills}</span>${inv.gun ? `<span>${icon('ammo')}${inv.ammo}</span>` : ''}</div>`;
   if ($('clock')._h !== html) { $('clock').innerHTML = html; $('clock')._h = html; }
   updateDamageNumbers(dt);
+  $('crosshair').style.display = G.driving || G.building ? 'none' : '';
   mmT -= dt; if (mmT <= 0) { mmT = 0.1; drawMinimap(); }
 }
 

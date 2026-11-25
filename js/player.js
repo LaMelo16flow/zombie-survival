@@ -31,6 +31,7 @@ export function updatePlayer(dt) {
   // Camera orbit
   P.camYaw -= input.lookX * 0.0035;
   P.camPitch = clamp(P.camPitch + input.lookY * 0.0028, -0.25, 1.1);
+  if (G.driving) { G.driveUpdate(dt); followCamera(dt, P.pos.x, P.pos.y + 1.6, P.pos.z, 10); syncSave(); return; }
 
   // Movement relative to camera
   const sprint = down('sprint') && (P.canSprint ? P.canSprint() : true);
@@ -58,19 +59,24 @@ export function updatePlayer(dt) {
   if (P.attackT > 0) P.attackT = Math.max(0, P.attackT - dt * 3);
   animateHuman(P.mesh, dt, P.speed, { attack: P.attackT, aim: P.aiming });
 
-  // Camera follow
-  camTarget.set(P.pos.x, P.pos.y + 1.7, P.pos.z);
+  followCamera(dt, P.pos.x, P.pos.y + 1.7, P.pos.z, P.camDist);
+  syncSave();
+}
+function syncSave() { const P = G.player, s = G.save.player; s.x = P.pos.x; s.z = P.pos.z; s.rot = P.rot; }
+
+// Orbit camera around a point (used on foot and in vehicles)
+export function followCamera(dt, x, y, z, dist) {
+  const P = G.player;
+  camTarget.set(x, y, z);
   const cp = Math.cos(P.camPitch);
   camPos.set(
-    camTarget.x + Math.sin(P.camYaw) * cp * P.camDist,
-    camTarget.y + Math.sin(P.camPitch) * P.camDist,
-    camTarget.z + Math.cos(P.camYaw) * cp * P.camDist
+    camTarget.x + Math.sin(P.camYaw) * cp * dist,
+    camTarget.y + Math.sin(P.camPitch) * dist,
+    camTarget.z + Math.cos(P.camYaw) * cp * dist
   );
   const ground = heightAt(camPos.x, camPos.z) + 0.6;
   if (camPos.y < ground) camPos.y = ground;
   G.camera.position.lerp(camPos, Math.min(1, dt * 14));
   G.camera.lookAt(camTarget);
   if (G.shake) { const k = G.shake * 0.6; G.camera.position.x += (Math.random() - 0.5) * k; G.camera.position.y += (Math.random() - 0.5) * k; }
-
-  const s = G.save.player; s.x = P.pos.x; s.z = P.pos.z; s.rot = P.rot;
 }

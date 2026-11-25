@@ -23,11 +23,11 @@ export const LOCATIONS = [
 ];
 
 const LOOT = {
-  town:     { food: [0, 2], water: [0, 2], meds: [0, 1], wood: [0, 2], scrap: [0, 1], ammo: [0, 3] },
-  gas:      { food: [1, 3], water: [1, 3], scrap: [1, 3] },
+  town:     { food: [0, 2], water: [0, 2], meds: [0, 1], wood: [0, 2], scrap: [0, 1], ammo: [0, 3], fuel: [0, 1] },
+  gas:      { food: [1, 3], water: [1, 3], scrap: [1, 3], fuel: [1, 2] },
   farm:     { food: [1, 4], water: [0, 2], wood: [2, 5] },
   hospital: { meds: [1, 3], water: [0, 2] },
-  military: { ammo: [4, 12], meds: [0, 1], scrap: [1, 2], gun: 0.25 },
+  military: { ammo: [4, 12], meds: [0, 1], scrap: [1, 2], fuel: [0, 1], gun: 0.25 },
   mall:     { food: [1, 3], water: [1, 3], scrap: [0, 2], melee: 0.2 },
   lab:      { meds: [1, 2], scrap: [1, 3] },
   camp: {}, raider: {}, tower: {}

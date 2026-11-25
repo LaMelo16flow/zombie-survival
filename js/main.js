@@ -12,6 +12,7 @@ import { storySystem } from './story.js';
 import { effectsSystem } from './effects.js';
 import { weatherSystem } from './weather.js';
 import { buildingSystem } from './building.js';
+import { vehicleSystem } from './vehicles.js';
 import { sfx, unlock } from './audio.js';
 import { storageSystem, loadLocal, takeBootSave, openLoadList, openSettings, clearLocal } from './storage.js';
 import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
@@ -67,7 +68,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, uiSystem];
+  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
