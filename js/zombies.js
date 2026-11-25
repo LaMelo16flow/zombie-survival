@@ -5,12 +5,13 @@ import { heightAt, collide } from './world.js';
 import { makeHuman, animateHuman, giveWeapon } from './characters.js';
 import { isNight } from './daynight.js';
 import { toast } from './ui.js';
+import { burst, impact } from './effects.js';
 
 // Zombie kinds. Multipliers can be changed by story decisions (G.save.world.mods).
 const KINDS = {
-  walker: { hp: 40, speed: 1.6, chase: 3.4, dmg: 9, shirt: 0x4b5a46, skin: 0x7d8f6a },
-  runner: { hp: 28, speed: 2.2, chase: 6.6, dmg: 7, shirt: 0x5a3b3b, skin: 0x8a9a74 },
-  brute:  { hp: 140, speed: 1.2, chase: 2.9, dmg: 22, shirt: 0x2d2d2d, skin: 0x6c7a5c, scale: 1.35 }
+  walker: { hp: 40, speed: 1.6, chase: 3.4, dmg: 9, shirts: [0x5a6b8a, 0x8a5a4a, 0x6b7a4a, 0x7a6a8a], skin: 0x9aab8a },
+  runner: { hp: 28, speed: 2.2, chase: 6.6, dmg: 7, shirts: [0x8a3b3b, 0xb0a070, 0x4a6a8a, 0x5a5a5a], skin: 0xa3b392, thin: true },
+  brute:  { hp: 140, speed: 1.2, chase: 2.9, dmg: 22, shirts: [0x3a3a3a, 0x4a3a2a, 0x2a3a4a, 0x553333], skin: 0x7d8f6a, scale: 1.35 }
 };
 
 export const zombies = [];
@@ -21,8 +22,11 @@ export function nearbyZombies(x, z, r) { return zombies.filter(zb => zb.alive &&
 
 function spawnZombie(x, z, kind) {
   const k = KINDS[kind];
-  const mesh = makeHuman({ skin: k.skin, shirt: k.shirt, pants: 0x34302a });
+  const v = Math.floor(Math.random() * 4);   // 4 looks per kind, geometry shared between same looks
+  const mesh = makeHuman({ zombie: true, skin: k.skin, shirt: k.shirts[v], pants: [0x3a3530, 0x2f3a4a, 0x4a4035, 0x302a35][v],
+    hair: [0x2a2622, 0x5a4a3a, 0x8a8a7a, 0x3a2a20][v], hairStyle: ['short', 'long', 'buzz', 'spiky'][v], cacheKey: kind + v });
   if (k.scale) mesh.scale.setScalar(k.scale);
+  if (k.thin) mesh.scale.set(0.88, 1.02, 0.88);
   mesh.position.set(x, heightAt(x, z), z);
   G.scene.add(mesh);
   const mods = G.save.world.mods;
@@ -57,6 +61,8 @@ const hitMat = new THREE.MeshBasicMaterial({ color: 0xff3020 });
 export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
   if (!zb.alive) return;
   zb.hp -= dmg; zb.hitFlash = 0.12; setFlash(zb, true);
+  const hy = zb.pos.y + 1.2 * (zb.k.scale || 1);
+  burst(zb.pos.x, hy, zb.pos.z, 0x7a0f14, 6, 3.5); impact(zb.pos.x, hy, zb.pos.z, 0xffffff, 0.5 + dmg / 80);
   const dx = zb.pos.x - fromX, dz = zb.pos.z - fromZ, l = Math.hypot(dx, dz) || 1;
   zb.kx = dx / l * knock; zb.kz = dz / l * knock;
   zb.state = 'chase';
@@ -78,6 +84,10 @@ let meleeCd = 0, shootCd = 0;
 function melee() {
   const P = G.player, w = WEAPONS[G.save.inv.melee] || WEAPONS.fists;
   if (meleeCd > 0) return; meleeCd = w.cd; P.attackT = 1;
+  // soft lock-on: turn toward the closest enemy in reach (feels good on a phone)
+  let near = null, nd = w.range + 1;
+  for (const t of [...zombies.filter(z => z.alive), ...(G.hostileTargets?.() || [])]) { const d = Math.hypot(t.pos.x - P.pos.x, t.pos.z - P.pos.z); if (d < nd) { nd = d; near = t; } }
+  if (near) P.rot = Math.atan2(near.pos.x - P.pos.x, near.pos.z - P.pos.z);
   for (const zb of zombies) {
     if (!zb.alive) continue;
     const dx = zb.pos.x - P.pos.x, dz = zb.pos.z - P.pos.z, d = Math.hypot(dx, dz);
@@ -115,6 +125,7 @@ function shoot() {
   }
   const dmg = (inv.gun === 'rifle' ? 90 : 34) * (G.save.world.mods.playerDmg || 1);
   if (best?.npc) best.npc.hurt(dmg); else if (best) hitZombie(best, dmg, P.pos.x, P.pos.z, 3);
+  impact(P.pos.x + Math.sin(P.rot) * 0.9, P.pos.y + 1.4, P.pos.z + Math.cos(P.rot) * 0.9, 0xffd060, 0.45);
   flashLight.intensity = 30; flashLight.position.set(P.pos.x + Math.sin(P.rot), P.pos.y + 1.5, P.pos.z + Math.cos(P.rot));
   G.emit?.('noise', { x: P.pos.x, z: P.pos.z, r: 60 });
 }
@@ -212,5 +223,5 @@ let lastMelee = null;
 function giveWeaponOnce() {
   const inv = G.save.inv, P = G.player;
   const want = P.aiming && inv.gun ? inv.gun : inv.melee;
-  if (want !== lastMelee) { giveWeapon(P.mesh, want === 'machete' ? 'bat' : want); lastMelee = want; }
+  if (want !== lastMelee) { giveWeapon(P.mesh, want); lastMelee = want; }
 }

@@ -7,7 +7,7 @@ import { makeHuman, animateHuman } from './characters.js';
 import { clamp } from './util.js';
 
 export function createPlayer() {
-  const mesh = makeHuman({ shirt: 0xc0603a, pants: 0x34495e, skin: 0x8d5a3b });
+  const mesh = makeHuman({ shirt: 0xc0503a, pants: 0x2f3e55, skin: 0x8d5a3b, hair: 0x1c1a22, hairStyle: 'spiky', scarf: 0xf2e6c9, pack: 0x6b5a3a, shoes: 0xe8e4e0 });
   G.scene.add(mesh);
   const s = G.save.player;
   mesh.position.set(s.x, heightAt(s.x, s.z), s.z);
@@ -68,6 +68,7 @@ export function updatePlayer(dt) {
   if (camPos.y < ground) camPos.y = ground;
   G.camera.position.lerp(camPos, Math.min(1, dt * 14));
   G.camera.lookAt(camTarget);
+  if (G.shake) { const k = G.shake * 0.6; G.camera.position.x += (Math.random() - 0.5) * k; G.camera.position.y += (Math.random() - 0.5) * k; }
 
   const s = G.save.player; s.x = P.pos.x; s.z = P.pos.z; s.rot = P.rot;
 }

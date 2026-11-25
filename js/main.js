@@ -9,6 +9,7 @@ import { interactSystem } from './interact.js';
 import { npcSystem } from './npc.js';
 import { factionSystem } from './factions.js';
 import { storySystem } from './story.js';
+import { effectsSystem } from './effects.js';
 import { storageSystem, loadLocal, takeBootSave, openLoadList, openSettings, clearLocal } from './storage.js';
 import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
 import { dayNight } from './daynight.js';
@@ -63,7 +64,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, uiSystem];
+  G.systems = [dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;

@@ -3,6 +3,7 @@ import { G } from './state.js';
 import { heightAt, collide } from './world.js';
 import { makeHuman, animateHuman, giveWeapon } from './characters.js';
 import { zombies, hitZombie } from './zombies.js';
+import { burst } from './effects.js';
 
 // Human characters that are not the player: faction guards, leaders, wandering survivors, your members.
 export const npcs = [];
@@ -28,6 +29,7 @@ export function spawnNPC(opts) {
   n.hurt = (dmg) => {
     if (!n.alive) return;
     n.hp -= dmg;
+    burst(n.pos.x, n.pos.y + 1.2, n.pos.z, 0x9a1018, 4, 3);
     if (n.hp <= 0) { n.alive = false; n.deadT = 0; G.emit('npcDied', n); }
   };
   npcs.push(n);

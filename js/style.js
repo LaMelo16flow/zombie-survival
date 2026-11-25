@@ -145,15 +145,29 @@ export function createSky(scene) {
   };
 }
 
-/* ---------- Merge simple geometries into one (for trees) ---------- */
+/* ---------- Merge simple geometries into one (trees, characters) ---------- */
+// Paint a geometry one colour (stored per vertex, so many colours can share one material).
+export function paint(geo, hex) {
+  const g = geo.index ? geo.toNonIndexed() : geo;
+  const c = new THREE.Color(hex), n = g.attributes.position.count, a = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(a, 3));
+  return g;
+}
 export function merge(geos) {
   const parts = geos.map(g => g.index ? g.toNonIndexed() : g);
   const count = parts.reduce((n, g) => n + g.attributes.position.count, 0);
-  const pos = new Float32Array(count * 3), nor = new Float32Array(count * 3);
+  const withColor = parts.some(g => g.attributes.color);
+  const pos = new Float32Array(count * 3), nor = new Float32Array(count * 3), col = withColor ? new Float32Array(count * 3).fill(1) : null;
   let o = 0;
-  for (const g of parts) { pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3); o += g.attributes.position.count; }
+  for (const g of parts) {
+    pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3);
+    if (col && g.attributes.color) col.set(g.attributes.color.array, o * 3);
+    o += g.attributes.position.count;
+  }
   const out = new THREE.BufferGeometry();
   out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  if (col) out.setAttribute('color', new THREE.BufferAttribute(col, 3));
   return out;
 }

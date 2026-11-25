@@ -1,6 +1,7 @@
 import { G } from './state.js';
 import { clamp } from './util.js';
 import { toast, showDeath } from './ui.js';
+import { burst, shake } from './effects.js';
 
 // Hunger/thirst drop over time; at zero they hurt you. Sprinting uses stamina.
 export const survival = {
@@ -29,6 +30,7 @@ export function damage(dmg, from) {
   if (G.dead) return;
   s.hp -= dmg;
   if (dmg > 2) {
+    const p = G.player.pos; burst(p.x, p.y + 1.2, p.z, 0xa0101a, 7, 3); shake(Math.min(0.35, dmg / 40));
     const v = document.getElementById('hurt');
     v.style.opacity = Math.min(0.8, 0.3 + dmg / 30);
     clearTimeout(v._t); v._t = setTimeout(() => v.style.opacity = 0, 180);
