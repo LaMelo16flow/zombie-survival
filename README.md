@@ -41,6 +41,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 - **v0.14** — hunting: deer and rabbits (run away), boars (charge), wolf packs (hunt at night); butcher bodies for raw meat, hide and bone; new builds: snare (catches rabbits overnight), hunting stand (climb up — zombies can't reach you), tanning rack (hide → leather), smokehouse (jerky)
 - **v0.15** — more base buildings, sorted into Defense / Survival / Crafting / Hunting: stone walls, metal gates, barricades, watchtower (climb up, zombies can't reach), torch posts, garden plots (plant seeds → vegetables in 2 days), rain collectors (daily water, more when it rains)
 - **v0.16** — explorable buildings: Pine Hollow houses now have rooms and furniture to search (beds, fridges, shelves, sofas); three new two-storey places with real stairs — Kessler County Police (lockers with guns and riot gear), Hillside Apartments, Pine Valley School; upper floors and roofs hide while you're inside
+- **v0.17** — new zombies: screamers (call the horde), exploders (blow up when close or killed), armoured riot zombies (only heavy hits get through), crawlers; bosses with health bars: The Colonel at Fort Kessler (charges, ground slams, calls soldiers) and Patient Zero at Helix Lab (teleports, spits acid, calls runners) — big rewards, and killing Patient Zero weakens every zombie
 
 ## Saving to GitHub
 1. Create a fine-grained token: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → *Generate new token*.

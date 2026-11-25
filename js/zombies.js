@@ -14,8 +14,14 @@ import { settleY } from './interiors.js';
 const KINDS = {
   walker: { hp: 40, speed: 1.6, chase: 3.4, dmg: 9, shirts: [0x5a6b8a, 0x8a5a4a, 0x6b7a4a, 0x7a6a8a], skin: 0x9aab8a },
   runner: { hp: 28, speed: 2.2, chase: 6.6, dmg: 7, shirts: [0x8a3b3b, 0xb0a070, 0x4a6a8a, 0x5a5a5a], skin: 0xa3b392, thin: true },
-  brute:  { hp: 140, speed: 1.2, chase: 2.9, dmg: 22, shirts: [0x3a3a3a, 0x4a3a2a, 0x2a3a4a, 0x553333], skin: 0x7d8f6a, scale: 1.35 }
+  brute:  { hp: 140, speed: 1.2, chase: 2.9, dmg: 22, shirts: [0x3a3a3a, 0x4a3a2a, 0x2a3a4a, 0x553333], skin: 0x7d8f6a, scale: 1.35 },
+  // special zombies
+  screamer: { hp: 30, speed: 1.4, chase: 3.2, dmg: 4, shirts: [0xe8e4e0, 0xd8d2c4, 0xc4bfb4, 0xe0dccf], skin: 0xc9d4c0, thin: true, look: { hairStyle: 'long', hair: 0xf0f0f0 }, special: 'scream' },
+  exploder: { hp: 50, speed: 1.0, chase: 2.7, dmg: 0, shirts: [0x6b8a3a, 0x7a9a3a, 0x5a7a2a, 0x6a8a4a], skin: 0x8fbf5a, fat: true, look: { hairStyle: 'buzz' }, special: 'explode' },
+  armored:  { hp: 120, speed: 1.3, chase: 3.0, dmg: 14, shirts: [0x2a3550, 0x252f45, 0x2a3550, 0x303a55], skin: 0x8a9a7a, look: { hairStyle: 'buzz', hat: 0x1a2030 }, armored: true },
+  crawler:  { hp: 25, speed: 0.9, chase: 2.4, dmg: 8, shirts: [0x5a4a3a, 0x4a4a4a, 0x6a5a4a, 0x3a3a3a], skin: 0x8a9a7a, crawl: true }
 };
+export { KINDS };
 
 export const zombies = [];
 const tmpV = new THREE.Vector3();
@@ -23,20 +29,33 @@ let flashLight;
 
 export function nearbyZombies(x, z, r) { return zombies.filter(zb => zb.alive && Math.hypot(zb.pos.x - x, zb.pos.z - z) < r); }
 
-function spawnZombie(x, z, kind) {
-  const k = KINDS[kind];
+export function spawnZombie(x, z, kind, extra = {}) {
+  const k = extra.k || KINDS[kind];
   const v = Math.floor(Math.random() * 4);   // 4 looks per kind, geometry shared between same looks
   const mesh = makeHuman({ zombie: true, skin: k.skin, shirt: k.shirts[v], pants: [0x3a3530, 0x2f3a4a, 0x4a4035, 0x302a35][v],
-    hair: [0x2a2622, 0x5a4a3a, 0x8a8a7a, 0x3a2a20][v], hairStyle: ['short', 'long', 'buzz', 'spiky'][v], cacheKey: kind + v });
+    hair: [0x2a2622, 0x5a4a3a, 0x8a8a7a, 0x3a2a20][v], hairStyle: ['short', 'long', 'buzz', 'spiky'][v], ...(k.look || {}), cacheKey: extra.k ? null : kind + v });
   if (k.scale) mesh.scale.setScalar(k.scale);
   if (k.thin) mesh.scale.set(0.88, 1.02, 0.88);
+  if (k.fat) mesh.scale.set(1.45, 1.05, 1.45);
   mesh.position.set(x, heightAt(x, z), z);
   G.scene.add(mesh);
   const mods = G.save.world.mods;
   const zb = { mesh, pos: mesh.position, kind, k, hp: k.hp * (mods.zHp || 1), maxHp: k.hp, alive: true, state: 'wander',
     rot: Math.random() * 6.28, wanderT: 0, atkCd: 0, atkAnim: 0, hitFlash: 0, deadT: 0, kx: 0, kz: 0 };
+  Object.assign(zb, extra);
   zombies.push(zb);
   return zb;
+}
+
+// Explosion (exploders, bosses): hurts everyone nearby
+export function explode(x, y, z, radius, dmg, color = 0x8fbf5a) {
+  burst(x, y + 1, z, color, 26, 7, 0.2); burst(x, y + 0.5, z, 0xffc94a, 14, 5, 0.16); impact(x, y + 1, z, 0xffe680, 2.4);
+  sfx.gun('rifle'); G.shake = Math.min(0.6, (G.shake || 0) + 0.4);
+  const P = G.player;
+  const dp = Math.hypot(P.pos.x - x, P.pos.z - z);
+  if (dp < radius && !G.dead) P.hurt(dmg * (1 - dp / radius * 0.6), 'explosion');
+  for (const o of zombies) if (o.alive && !o.boss) { const d = Math.hypot(o.pos.x - x, o.pos.z - z); if (d < radius) hitZombie(o, dmg * 1.5, x, z, 8); }
+  G.emit('explosion', { x, z, radius, dmg });
 }
 
 // Spawn points can be placed by the world (hordes near towns, etc.)
@@ -51,8 +70,12 @@ function maxZombies() {
 
 function pickKind() {
   const r = Math.random(), d = G.save.world.day;
-  if (r < Math.min(0.08, 0.02 * d)) return 'brute';
-  if (r < 0.2 + (isNight() ? 0.15 : 0)) return 'runner';
+  if (r < Math.min(0.05, 0.012 * d)) return 'screamer';
+  if (r < Math.min(0.1, 0.025 * d)) return 'exploder';
+  if (r < Math.min(0.15, 0.03 * d) && d >= 2) return 'armored';
+  if (r < 0.2) return 'crawler';
+  if (r < 0.2 + Math.min(0.08, 0.02 * d)) return 'brute';
+  if (r < 0.38 + (isNight() ? 0.15 : 0)) return 'runner';
   return 'walker';
 }
 
@@ -63,6 +86,8 @@ const hitMat = new THREE.MeshBasicMaterial({ color: 0xff3020 });
 
 export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
   if (!zb.alive) return;
+  if (zb.k.armored) dmg *= dmg >= 45 ? 0.85 : 0.4;          // riot gear: only heavy hits get through
+  if (zb.boss) { knock *= 0.1; dmg *= zb.boss.dmgMul?.(zb) ?? 1; }
   zb.hp -= dmg; zb.hitFlash = 0.12; setFlash(zb, true); sfx.hit();
   const hy = zb.pos.y + 1.2 * (zb.k.scale || 1);
   burst(zb.pos.x, hy, zb.pos.z, 0x7a0f14, 6, 3.5); damageNumber(zb.pos.x, hy + 0.5, zb.pos.z, dmg, dmg >= 50); impact(zb.pos.x, hy, zb.pos.z, 0xffffff, 0.5 + dmg / 80);
@@ -70,7 +95,8 @@ export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
   zb.kx = dx / l * knock; zb.kz = dz / l * knock;
   zb.state = 'chase';
   if (zb.hp <= 0) {
-    zb.alive = false; zb.deadT = 0; setFlash(zb, false);
+    zb.alive = false; zb.deadT = 0; setFlash(zb, false); zb.deadY = zb.pos.y;
+    if (zb.k.special === 'explode' && !zb.exploded) { zb.exploded = true; setTimeout(() => explode(zb.pos.x, zb.pos.y, zb.pos.z, 4.5, 30), 50); }
     G.save.stats.kills++; sfx.splat(zb.pos.x, zb.pos.z);
     G.emit?.('zombieKilled', zb);
   }
@@ -183,11 +209,11 @@ export const zombieSystem = {
       if (!zb.alive) {
         zb.deadT += dt;
         zb.mesh.rotation.x = Math.max(-Math.PI / 2, -zb.deadT * 5);
-        zb.mesh.position.y = heightAt(zb.pos.x, zb.pos.z) + 0.2;
+        zb.mesh.position.y = (zb.deadY ?? zb.pos.y) + 0.2;
         if (zb.deadT > 8 || d > 150) { G.scene.remove(zb.mesh); zombies.splice(i, 1); }
         continue;
       }
-      if (d > 160) { G.scene.remove(zb.mesh); zombies.splice(i, 1); continue; }
+      if (d > 160 && !zb.boss) { G.scene.remove(zb.mesh); zombies.splice(i, 1); continue; }
       if (zb.hitFlash > 0) { zb.hitFlash -= dt; if (zb.hitFlash <= 0) setFlash(zb, false); }
 
       // pick a target: player or the nearest ally/NPC (set up by factions)
@@ -202,7 +228,16 @@ export const zombieSystem = {
 
       let speed = 0;
       const mods = G.save.world.mods;
-      if (zb.state === 'chase') {
+      if (zb.boss) speed = zb.boss.ai(zb, dt, d, dx, dz);
+      else if (zb.state === 'chase') {
+        // special zombies
+        if (zb.k.special === 'scream' && !zb.screamCd) {
+          zb.screamCd = 15; zb.atkAnim = 1; sfx.scream?.(zb.pos.x, zb.pos.z);
+          G.banner?.('SCREAMER!', 'THE HORDE HEARD IT', 1.8);
+          G.emit('noise', { x: zb.pos.x, z: zb.pos.z, r: 70 });
+          spawnGroup(zb.pos.x + (Math.random() - 0.5) * 30, zb.pos.z + (Math.random() - 0.5) * 30, 5, ['walker', 'runner']);
+        }
+        if (zb.k.special === 'explode' && td < 2.2 && !zb.exploded) { zb.exploded = true; zb.hp = 0; hitZombie(zb, 1, zb.pos.x, zb.pos.z, 0); continue; }
         const a = Math.atan2(tx - zb.pos.x, tz - zb.pos.z);
         let r = a - zb.rot; r = Math.atan2(Math.sin(r), Math.cos(r)); zb.rot += r * Math.min(1, dt * 6);
         const reach = 1.3 * (zb.k.scale || 1);
@@ -217,6 +252,7 @@ export const zombieSystem = {
         if (zb.wanderT <= 0) { zb.wanderT = 2 + Math.random() * 5; zb.rot += (Math.random() - 0.5) * 2.5; zb.idle = Math.random() < 0.4; }
         speed = zb.idle ? 0 : zb.k.speed * 0.5;
       }
+      if (zb.screamCd) zb.screamCd = Math.max(0, zb.screamCd - dt) || null;
       zb.atkAnim = Math.max(0, zb.atkAnim - dt * 2.5);
       zb.pos.x += Math.sin(zb.rot) * speed * dt + zb.kx * dt;
       zb.pos.z += Math.cos(zb.rot) * speed * dt + zb.kz * dt;
@@ -229,7 +265,8 @@ export const zombieSystem = {
       collide(zb.pos, 0.4 * (zb.k.scale || 1));
       settleY(zb.pos, dt);
       zb.mesh.rotation.y = zb.rot;
-      if (d < 90) animateHuman(zb.mesh, dt, speed / 4, { zombie: true, attack: zb.atkAnim });
+      if (d < 90 && !zb.boss) animateHuman(zb.mesh, dt, speed / 4, { zombie: true, attack: zb.atkAnim });
+      if (zb.k.crawl) { const p = zb.mesh.userData.parts; p.body.rotation.x = 1.35; p.body.position.y = 0.32; p.legL.rotation.x = p.legR.rotation.x = 0.2; p.head.rotation.x = -1.1; }
     }
   }
 };

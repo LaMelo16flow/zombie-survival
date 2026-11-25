@@ -161,3 +161,11 @@ input:focus, select:focus { border-color: var(--teal); outline: none; }
 .tabs button.on { background: var(--gold); color: var(--ink); }
 #buildbar .bp.cat { background: var(--ink); color: var(--paper); border: 2px solid #4a4260; min-height: 40px; align-self: center; }
 #buildbar .bp.cat.on { background: var(--teal); color: var(--ink); }
+
+/* ---------- Boss health bar ---------- */
+#bossbar { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(520px, 70vw); text-align: center; }
+#bossbar b { font: 400 22px var(--title); color: var(--paper); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; letter-spacing: .06em; }
+#bossbar small { display: block; font-weight: 800; color: var(--gold); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
+#bossbar .hp { height: 14px; margin-top: 4px; background: rgba(21,18,28,.8); border: 2px solid var(--ink); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+#bossbar .hp i { display: block; height: 100%; background: linear-gradient(90deg, #8a1e17, var(--red)); transform-origin: left; transition: transform .2s; }
+@media (max-width: 600px) { #bossbar { top: calc(110px + env(safe-area-inset-top)); } }

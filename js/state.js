@@ -1,5 +1,5 @@
 // The one shared game state. Everything that must be saved lives in G.save.
-export const VERSION = '0.16';
+export const VERSION = '0.17';
 
 export const G = {
   scene: null, camera: null, renderer: null,

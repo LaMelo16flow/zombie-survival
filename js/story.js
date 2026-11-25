@@ -204,7 +204,7 @@ export function openJournal() {
 let checkT = 0;
 export const storySystem = {
   init() {
-    G.story = { offerWork };
+    G.story = { offerWork, log };
     addTouchButton('LOG', 'journal', true);
     G.on('newDay', () => { if (S().flags.hordeUntil && day() >= S().flags.hordeUntil) { delete G.save.world.mods.density; delete S().flags.hordeUntil; } });
     G.on('leaderKilled', f => log(`Killed ${FACTIONS[f].leader}, leader of ${FACTIONS[f].name}.`));

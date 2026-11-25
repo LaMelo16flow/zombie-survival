@@ -91,6 +91,9 @@ export const sfx = {
   night() { if (!ctx) return; const t = now(); [220, 207.6, 196].forEach((f, i) => tone(f, 1.2, { type: 'sawtooth', gain: 0.07, t: t + i * 0.35, a: 0.3, bus: musicBus })); },
   death() { if (!ctx) return; const t = now(); [392, 349, 311, 262].forEach((f, i) => tone(f, 0.9, { type: 'triangle', gain: 0.2, t: t + i * 0.3, a: 0.05, bus: musicBus })); },
   thunder(delay = 0) { if (!ctx) return; const t = now() + delay; noise(2.8, { type: 'lowpass', freq: 260, q: 0.5, gain: 0.9, a: 0.05, bus: ambBus, t, sweep: 0.4 }); noise(0.4, { type: 'lowpass', freq: 1200, gain: 0.4, t, bus: ambBus }); },
+  scream(x, z) { if (!ctx) return; const p = place(x, z, 80); const t = now();
+    tone(900, 1.2, { type: 'sawtooth', gain: 0.25 * Math.max(0.3, p.vol), slide: 1.6, pan: p.pan, t }); noise(1.1, { freq: 2500, q: 3, gain: 0.4 * Math.max(0.3, p.vol), sweep: 1.8, pan: p.pan, t }); },
+  roar() { if (!ctx) return; const t = now(); tone(55, 1.4, { type: 'sawtooth', gain: 0.6, slide: 0.6, t }); noise(1.2, { type: 'lowpass', freq: 400, gain: 0.7, t, sweep: 0.5 }); },
   horn() { if (!ctx) return; tone(392, 0.35, { type: 'square', gain: 0.12 }); tone(494, 0.35, { type: 'square', gain: 0.1 }); }
 };
 
