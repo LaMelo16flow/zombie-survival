@@ -1,6 +1,7 @@
 import { G, newSave, VERSION } from './state.js';
 import { pressed, addTouchButton } from './input.js';
 import { toast, showModal, closeModal, esc } from './ui.js';
+import { audioPrefs, savePrefs } from './audio.js';
 
 /*
   SAVING
@@ -153,6 +154,8 @@ export function openPause() {
       <button id="p-gh">Save to GitHub</button>
       <button id="p-load">Load from GitHub</button>
       <button id="p-local">Save on this device</button>
+      <button id="p-music">Music: ${audioPrefs.music ? 'on' : 'off'}</button>
+      <button id="p-sfx">Sounds: ${audioPrefs.sfx ? 'on' : 'off'}</button>
       <button id="p-set">GitHub settings</button>
       <button id="p-quit">Quit to title</button>
     </div></div>`);
@@ -162,6 +165,8 @@ export function openPause() {
   on('p-load', () => openLoadList(openPause));
   on('p-local', () => { saveLocal(); toast('Saved on this device.'); closeModal(); });
   on('p-set', () => openSettings(openPause));
+  on('p-music', () => { audioPrefs.music = !audioPrefs.music; savePrefs(); openPause(); });
+  on('p-sfx', () => { audioPrefs.sfx = !audioPrefs.sfx; savePrefs(); openPause(); });
   on('p-quit', () => { saveLocal(); location.reload(); });
 }
 

@@ -10,6 +10,8 @@ import { npcSystem } from './npc.js';
 import { factionSystem } from './factions.js';
 import { storySystem } from './story.js';
 import { effectsSystem } from './effects.js';
+import { weatherSystem } from './weather.js';
+import { sfx, unlock } from './audio.js';
 import { storageSystem, loadLocal, takeBootSave, openLoadList, openSettings, clearLocal } from './storage.js';
 import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
 import { dayNight } from './daynight.js';
@@ -64,7 +66,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, uiSystem];
+  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
@@ -104,5 +106,5 @@ const boot = takeBootSave();
 if (boot) startGame(boot);
 requestAnimationFrame(loop);
 G.newGame = () => { clearLocal(); location.reload(); };
-G.banner = banner;
+G.banner = banner; G.sfx = sfx;
 window.G = G; // handy for debugging in the browser console

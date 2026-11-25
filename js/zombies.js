@@ -6,6 +6,7 @@ import { makeHuman, animateHuman, giveWeapon } from './characters.js';
 import { isNight } from './daynight.js';
 import { toast, damageNumber } from './ui.js';
 import { burst, impact } from './effects.js';
+import { sfx } from './audio.js';
 
 // Zombie kinds. Multipliers can be changed by story decisions (G.save.world.mods).
 const KINDS = {
@@ -60,7 +61,7 @@ const hitMat = new THREE.MeshBasicMaterial({ color: 0xff3020 });
 
 export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
   if (!zb.alive) return;
-  zb.hp -= dmg; zb.hitFlash = 0.12; setFlash(zb, true);
+  zb.hp -= dmg; zb.hitFlash = 0.12; setFlash(zb, true); sfx.hit();
   const hy = zb.pos.y + 1.2 * (zb.k.scale || 1);
   burst(zb.pos.x, hy, zb.pos.z, 0x7a0f14, 6, 3.5); damageNumber(zb.pos.x, hy + 0.5, zb.pos.z, dmg, dmg >= 50); impact(zb.pos.x, hy, zb.pos.z, 0xffffff, 0.5 + dmg / 80);
   const dx = zb.pos.x - fromX, dz = zb.pos.z - fromZ, l = Math.hypot(dx, dz) || 1;
@@ -68,7 +69,7 @@ export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
   zb.state = 'chase';
   if (zb.hp <= 0) {
     zb.alive = false; zb.deadT = 0; setFlash(zb, false);
-    G.save.stats.kills++;
+    G.save.stats.kills++; sfx.splat(zb.pos.x, zb.pos.z);
     G.emit?.('zombieKilled', zb);
   }
 }
@@ -83,7 +84,7 @@ let meleeCd = 0, shootCd = 0;
 
 function melee() {
   const P = G.player, w = WEAPONS[G.save.inv.melee] || WEAPONS.fists;
-  if (meleeCd > 0) return; meleeCd = w.cd; P.attackT = 1;
+  if (meleeCd > 0) return; meleeCd = w.cd; P.attackT = 1; sfx.swing();
   // soft lock-on: turn toward the closest enemy in reach (feels good on a phone)
   let near = null, nd = w.range + 1;
   for (const t of [...zombies.filter(z => z.alive), ...(G.hostileTargets?.() || [])]) { const d = Math.hypot(t.pos.x - P.pos.x, t.pos.z - P.pos.z); if (d < nd) { nd = d; near = t; } }
@@ -108,8 +109,8 @@ function shoot() {
   const P = G.player, inv = G.save.inv;
   if (shootCd > 0) return;
   if (!inv.gun) { toast('You have no gun yet.', 1.2); shootCd = 0.6; return; }
-  if (inv.ammo <= 0) { toast('Out of ammo!', 1.2); shootCd = 0.6; return; }
-  inv.ammo--; shootCd = inv.gun === 'rifle' ? 0.9 : 0.35;
+  if (inv.ammo <= 0) { toast('Out of ammo!', 1.2); sfx.empty(); shootCd = 0.6; return; }
+  inv.ammo--; sfx.gun(inv.gun); shootCd = inv.gun === 'rifle' ? 0.9 : 0.35;
   // face camera direction
   P.rot = P.camYaw + Math.PI; P.aimT = 0.4;
   const dir = new THREE.Vector3(); G.camera.getWorldDirection(dir);
@@ -163,7 +164,8 @@ export const zombieSystem = {
     }
 
     const night = isNight();
-    const sight = (night ? 34 : 24) * (P.sprinting ? 1.5 : 1) * (G.save.world.mods.stealth || 1);
+    const Wt = G.weather || { rain: 0, fog: 0 };
+    const sight = (night ? 34 : 24) * (P.sprinting ? 1.5 : 1) * (G.save.world.mods.stealth || 1) * (1 - Wt.rain * 0.2 - Wt.fog * 0.35);
     for (let i = zombies.length - 1; i >= 0; i--) {
       const zb = zombies[i];
       const dx = P.pos.x - zb.pos.x, dz = P.pos.z - zb.pos.z, d = Math.hypot(dx, dz);
@@ -183,7 +185,8 @@ export const zombieSystem = {
         const e = Math.hypot(t.pos.x - zb.pos.x, t.pos.z - zb.pos.z);
         if (e < td) { td = e; tx = t.pos.x; tz = t.pos.z; target = t; }
       }
-      if (zb.state === 'wander' && td < sight) zb.state = 'chase';
+      if (zb.state === 'wander' && td < sight) { zb.state = 'chase'; if (d < 40) sfx.groan(zb.pos.x, zb.pos.z, zb.k.scale ? 0.7 : 1); }
+      else if (d < 30 && Math.random() < dt * (zb.state === 'chase' ? 0.12 : 0.03)) sfx.groan(zb.pos.x, zb.pos.z, zb.k.scale ? 0.7 : zb.k.thin ? 1.3 : 1);
       if (zb.state === 'chase' && td > sight * 2.2) zb.state = 'wander';
 
       let speed = 0;

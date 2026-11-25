@@ -4,6 +4,7 @@ import { addFlat, heightAt, addBox, addCircle } from './world.js';
 import { addInteractable } from './interact.js';
 import { spawnGroup } from './zombies.js';
 import { toast, banner } from './ui.js';
+import { sfx } from './audio.js';
 import { rng } from './util.js';
 import { toon } from './style.js';
 
@@ -78,7 +79,7 @@ function crate(scene, id, x, z, type) {
   addInteractable({ x, z, r: 1.8, label: () => looted() ? 'Empty (refills in a few days)' : 'Search', action: () => {
     if (looted()) return;
     G.save.world.looted[id] = G.save.world.day;
-    toast(giveLoot(type));
+    toast(giveLoot(type)); sfx.pickup();
     G.emit('looted', { id, type });
   }});
   return m;
@@ -199,7 +200,7 @@ export const locationSystem = {
       const d = Math.hypot(P.pos.x - L.x, P.pos.z - L.z);
       if (d < L.r + 10 && !w.discovered.includes(L.id)) {
         w.discovered.push(L.id);
-        banner(L.name, 'DISCOVERED');
+        banner(L.name, 'DISCOVERED'); sfx.discover();
         G.emit('discover', L);
       }
       // A horde waits in dangerous places when you arrive

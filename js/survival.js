@@ -2,6 +2,7 @@ import { G } from './state.js';
 import { clamp } from './util.js';
 import { toast, showDeath } from './ui.js';
 import { burst, shake } from './effects.js';
+import { sfx } from './audio.js';
 
 // Hunger/thirst drop over time; at zero they hurt you. Sprinting uses stamina.
 export const survival = {
@@ -12,7 +13,7 @@ export const survival = {
   update(dt) {
     const s = G.save.stats, P = G.player;
     s.hunger = clamp(s.hunger - dt * 0.09, 0, 100);   // ~18 min from full to empty
-    s.thirst = clamp(s.thirst - dt * 0.13, 0, 100);   // ~13 min
+    s.thirst = clamp(s.thirst - dt * 0.13 * (1 - (G.weather?.rain || 0) * 0.4), 0, 100);   // ~13 min
     if (P.sprinting) s.stamina = clamp(s.stamina - dt * 18, 0, 100);
     else s.stamina = clamp(s.stamina + dt * (P.moving ? 8 : 14), 0, 100);
     if (s.hunger <= 0 || s.thirst <= 0) damage(dt * 1.2, 'starving');
@@ -30,10 +31,10 @@ export function damage(dmg, from) {
   if (G.dead) return;
   s.hp -= dmg;
   if (dmg > 2) {
-    const p = G.player.pos; burst(p.x, p.y + 1.2, p.z, 0xa0101a, 7, 3); shake(Math.min(0.35, dmg / 40));
+    sfx.hurt(); const p = G.player.pos; burst(p.x, p.y + 1.2, p.z, 0xa0101a, 7, 3); shake(Math.min(0.35, dmg / 40));
     const v = document.getElementById('hurt');
     v.style.opacity = Math.min(0.8, 0.3 + dmg / 30);
     clearTimeout(v._t); v._t = setTimeout(() => v.style.opacity = 0, 180);
   }
-  if (s.hp <= 0) { s.hp = 0; G.dead = true; showDeath(from); }
+  if (s.hp <= 0) { s.hp = 0; G.dead = true; sfx.death(); showDeath(from); }
 }

@@ -3,6 +3,7 @@ import { G } from './state.js';
 import { input, down, updateMoveFromKeys } from './input.js';
 import { heightAt, collide, inWater } from './world.js';
 import { WATER } from './world.js';
+import { sfx } from './audio.js';
 import { makeHuman, animateHuman } from './characters.js';
 import { clamp } from './util.js';
 
@@ -47,6 +48,7 @@ export function updatePlayer(dt) {
     P.rot += d * Math.min(1, dt * 12);
   }
   P.moving = mag > 0.05;
+  if (P.moving) { P.stepT = (P.stepT || 0) - dt * (sprint ? 1.7 : 1) * mag; if (P.stepT <= 0) { P.stepT = 0.42; sfx.step(inWater(P.pos.x, P.pos.z)); } }
   P.sprinting = sprint && P.moving;
   P.speed = mag * (sprint ? 1 : 0.55);
   collide(P.pos, P.radius);

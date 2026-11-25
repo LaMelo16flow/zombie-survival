@@ -216,8 +216,9 @@ export function showChoice(title, text, choices, { lock = false } = {}) {
   showModal(`<div class="panel"><h2>${title}</h2><p>${text}</p><div class="choices">
     ${choices.map((c, i) => `<button data-c="${i}" ${c.disabled ? 'disabled' : ''}><span class="k">${i + 1}</span><span>${c.label}${c.note ? `<small>${c.note}</small>` : ''}</span></button>`).join('')}
     </div></div>`);
+  G.sfx?.ui();
   document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
-    const c = choices[+b.dataset.c]; if (c.disabled) return;
+    const c = choices[+b.dataset.c]; if (c.disabled) return; G.sfx?.ui();
     G.lockModal = false; closeModal(); c.fn && c.fn();
   });
 }
