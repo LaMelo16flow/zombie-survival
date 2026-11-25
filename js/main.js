@@ -17,6 +17,7 @@ import { craftingSystem } from './crafting.js';
 import { gatherSystem } from './gather.js';
 import { animalSystem } from './animals.js';
 import { bossSystem } from './boss.js';
+import { characterSystem, openCreator, animatePreview, PERKS } from './character.js';
 import { sfx, unlock } from './audio.js';
 import { storageSystem, loadLocal, takeBootSave, openLoadList, openSettings, clearLocal } from './storage.js';
 import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
@@ -72,7 +73,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, uiSystem];
+  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
@@ -93,7 +94,8 @@ function loop(now) {
     updateHUD(dt);
   }
   endFrame();
-  if (!G.running) { G.time += dt; G.sky.update(G.camera, dt); G.water.time.value += dt; G.camera.position.set(Math.sin(G.time * 0.05) * 60, 30, Math.cos(G.time * 0.05) * 60); G.camera.lookAt(0, 8, 0); }
+  if (!G.running && G.creating) { G.time += dt; G.sky.update(G.camera, dt); animatePreview(dt); }
+  else if (!G.running) { G.time += dt; G.sky.update(G.camera, dt); G.water.time.value += dt; G.camera.position.set(Math.sin(G.time * 0.05) * 60, 30, Math.cos(G.time * 0.05) * 60); G.camera.lookAt(0, 8, 0); }
   G.outline.render(G.scene, G.camera);
 }
 
@@ -101,7 +103,11 @@ initRenderer();
 initInput(canvas);
 buildWorld();
 G.camera.position.set(30, 40, 30); G.camera.lookAt(0, 0, 0);
-document.getElementById('btn-new').onclick = () => { clearLocal(); startGame(newSave()); };
+document.getElementById('btn-new').onclick = () => openCreator(({ name, look, perk }) => {
+  clearLocal();
+  const s = newSave(name); s.player.look = look; s.player.perk = perk; PERKS[perk].kit(s.inv);
+  startGame(s);
+});
 const local = loadLocal();
 const extra = document.getElementById('title-extra');
 const btn = (label, fn, cls = '') => { const b = document.createElement('button'); b.textContent = label; b.className = cls; b.onclick = fn; extra.appendChild(b); extra.appendChild(document.createElement('br')); };

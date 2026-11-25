@@ -169,3 +169,18 @@ input:focus, select:focus { border-color: var(--teal); outline: none; }
 #bossbar .hp { height: 14px; margin-top: 4px; background: rgba(21,18,28,.8); border: 2px solid var(--ink); clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 #bossbar .hp i { display: block; height: 100%; background: linear-gradient(90deg, #8a1e17, var(--red)); transform-origin: left; transition: transform .2s; }
 @media (max-width: 600px) { #bossbar { top: calc(110px + env(safe-area-inset-top)); } }
+
+/* ---------- Character creator & skills ---------- */
+#modal.creator-wrap { background: linear-gradient(90deg, rgba(21,18,28,.75) 0%, rgba(21,18,28,.35) 55%, transparent 75%); backdrop-filter: none; -webkit-backdrop-filter: none; justify-content: flex-start; align-items: flex-start; }
+.panel.creator { width: min(440px, 100%); margin: 0; max-height: calc(100vh - 40px); }
+.sws { display: flex; flex-wrap: wrap; gap: 6px; }
+.sws .sw { width: 34px; height: 34px; min-height: 0; padding: 0; border-radius: 50%; clip-path: none; border: 3px solid var(--ink); }
+.sws .sw.on { outline: 3px solid var(--gold); outline-offset: 1px; transform: none; }
+.panel.creator .choices button.on, .panel .tabs button.on { background: var(--gold); color: var(--ink); }
+@media (max-width: 700px) { #modal.creator-wrap { align-items: stretch; justify-content: flex-end; background: linear-gradient(0deg, rgba(21,18,28,.85) 0%, rgba(21,18,28,.4) 60%, transparent 80%); } .panel.creator { max-height: 58vh; } }
+#portrait { overflow: visible; }
+#lvl { position: absolute; right: -6px; bottom: -6px; font: 400 12px var(--title); font-style: normal; background: var(--gold); color: var(--ink); border: 2px solid var(--ink); border-radius: 10px; padding: 0 5px; min-width: 22px; text-align: center; }
+#lvl.pts { background: var(--teal); animation: pulse .7s infinite alternate; }
+#xp { position: absolute; left: 4px; right: 4px; bottom: -12px; height: 5px; background: rgba(21,18,28,.7); border-radius: 3px; overflow: hidden; }
+#xp i { display: block; height: 100%; background: var(--gold); width: 0; }
+.xpbar { height: 10px; background: var(--ink); border-radius: 6px; overflow: hidden; margin: 6px 0 10px; } .xpbar i { display: block; height: 100%; background: var(--gold); }

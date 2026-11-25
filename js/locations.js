@@ -100,7 +100,8 @@ export function giveLoot(type) {
     if (k === 'gun') { if (Math.random() < v) { const g = Math.random() < 0.4 ? 'rifle' : Math.random() < 0.5 ? 'shotgun' : 'pistol'; if (!(inv.ownedGuns || []).includes(g)) { own('ownedGuns', g); inv.gun = inv.gun || g; got.push('a ' + g + '!'); } inv.ammo += 6; } continue; }
     if (k === 'armor') { if (Math.random() < v && !(inv.ownedArmor || []).includes('riot')) { own('ownedArmor', 'riot'); if (!inv.armor || inv.armor === 'none' || inv.armor === 'leather') inv.armor = 'riot'; got.push('riot gear!'); } continue; }
     if (k === 'melee') { if (Math.random() < v && !(inv.ownedMelee || []).includes('machete')) { own('ownedMelee', 'machete'); inv.melee = 'machete'; got.push('a machete!'); } continue; }
-    const n = v[0] + Math.floor(Math.random() * (v[1] - v[0] + 1));
+    let n = v[0] + Math.floor(Math.random() * (v[1] - v[0] + 1));
+    if (G.skillMul && Math.random() < G.skillMul('loot') - 1) n++;   // scavengers find a bit more
     if (n > 0) { inv[k] = (inv[k] || 0) + n; got.push(`${n} ${k}`); }
   }
   return got.length ? 'Found: ' + got.join(', ') : 'Nothing useful.';

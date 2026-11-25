@@ -9,7 +9,8 @@ import { makeHuman, animateHuman } from './characters.js';
 import { clamp } from './util.js';
 
 export function createPlayer() {
-  const mesh = makeHuman({ shirt: 0xc0503a, pants: 0x2f3e55, skin: 0x8d5a3b, hair: 0x1c1a22, hairStyle: 'spiky', scarf: 0xf2e6c9, pack: 0x6b5a3a, shoes: 0xe8e4e0 });
+  const look = G.save.player.look || { shirt: 0xc0503a, pants: 0x2f3e55, skin: 0x8d5a3b, hair: 0x1c1a22, hairStyle: 'spiky' };
+  const mesh = makeHuman({ ...look, scarf: 0xf2e6c9, pack: 0x6b5a3a, shoes: 0xe8e4e0 });
   G.scene.add(mesh);
   const s = G.save.player;
   mesh.position.set(s.x, heightAt(s.x, s.z), s.z);

@@ -76,7 +76,7 @@ export function initHUD() {
     b.innerHTML = `<b></b><i style="background:${color}"></i><span>${icon(ic)}${label}</span>`;
     wrap.appendChild(b); barEls[k] = { el: b, fill: b.children[1], trail: b.children[0] };
   }
-  $('initial').textContent = (G.save.factions?.player?.name || G.save.player.name || 'S')[0].toUpperCase();
+  $('initial').textContent = (G.save.player.name || 'S')[0].toUpperCase();
   banner('Pine Hollow Outskirts', 'DAY ' + G.save.world.day);
 }
 
@@ -105,6 +105,8 @@ export function updateHUD(dt) {
     e.el.classList.toggle('low', f < 0.2);
   }
   $('portrait').style.setProperty('--hp', (st.hp / st.maxHp * 100) + '%');
+  $('lvl').textContent = (st.points ? '+' : '') + (st.level || 1); $('lvl').classList.toggle('pts', !!st.points);
+  $('xpfill').style.width = ((st.xp || 0) / Math.round(100 * Math.pow(st.level || 1, 1.35)) * 100) + '%';
   const inv = G.save.inv;
   const html = `<div class="t">${icon(isNight() ? 'moon' : 'sun')}${clockText()}</div>
     <div class="s"><span>${icon('skull')}${st.kills}</span>${inv.gun ? `<span>${icon('ammo')}${inv[(GUNS[inv.gun] || GUNS.pistol).ammo] || 0}</span>` : ''}</div>`;
@@ -186,7 +188,7 @@ export function openInventory() {
     <button class="primary" id="inv-close">Close</button> <button id="inv-craft">Crafting</button></div>`);
   document.querySelectorAll('[data-use]').forEach(b => b.onclick = () => {
     const k = b.dataset.use; if (!inv[k]) return;
-    inv[k]--; ITEMS[k].use.fx(G.save.stats); toast(`${ITEMS[k].name}: <b>${ITEMS[k].use.msg}</b>`); G.sfx?.pickup(); openInventory();
+    inv[k]--; const st = G.save.stats, hp0 = st.hp; ITEMS[k].use.fx(st); if (st.hp > hp0) st.hp = Math.min(st.maxHp, hp0 + (st.hp - hp0) * (G.skillMul?.('heal') || 1)); toast(`${ITEMS[k].name}: <b>${ITEMS[k].use.msg}</b>`); G.sfx?.pickup(); openInventory();
   });
   document.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { const [kind, k] = b.dataset.eq.split(':'); inv[kind] = k; openInventory(); });
   $('inv-close').onclick = closeModal;

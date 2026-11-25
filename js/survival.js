@@ -13,8 +13,9 @@ export const survival = {
   },
   update(dt) {
     const s = G.save.stats, P = G.player;
-    s.hunger = clamp(s.hunger - dt * 0.09, 0, 100);   // ~18 min from full to empty
-    s.thirst = clamp(s.thirst - dt * 0.13 * (1 - (G.weather?.rain || 0) * 0.4), 0, 100);   // ~13 min
+    const drain = G.skillMul ? G.skillMul('drain') : 1;
+    s.hunger = clamp(s.hunger - dt * 0.09 * drain, 0, 100);   // ~18 min from full to empty
+    s.thirst = clamp(s.thirst - dt * 0.13 * drain * (1 - (G.weather?.rain || 0) * 0.4), 0, 100);   // ~13 min
     if (P.sprinting) s.stamina = clamp(s.stamina - dt * 18, 0, 100);
     else s.stamina = clamp(s.stamina + dt * (P.moving ? 8 : 14), 0, 100);
     if (s.hunger <= 0 || s.thirst <= 0) damage(dt * 1.2, 'starving');
