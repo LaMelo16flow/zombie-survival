@@ -11,6 +11,9 @@ Every decision changes where the story goes. Create your own faction, recruit su
 | Move | WASD | left thumb |
 | Look | mouse (click to lock) | drag right side |
 | Sprint | Shift | push stick to the edge |
+| Melee | F / Space / left click | HIT |
+| Shoot | R / right click | SHOOT |
 
 ## Build log
 - **v0.1** — 3D open world (1 km²), third-person character, camera, PC + touch controls
+- **v0.2** — zombies (walker, runner, brute), melee + guns, health/food/water/stamina, day–night cycle (night = more, faster zombies), flashlight, death screen

@@ -1,0 +1,210 @@
+import * as THREE from '../lib/three.module.min.js';
+import { G } from './state.js';
+import { pressed, down, addTouchButton } from './input.js';
+import { heightAt, collide } from './world.js';
+import { makeHuman, animateHuman, giveWeapon } from './characters.js';
+import { isNight } from './daynight.js';
+import { toast } from './ui.js';
+
+// Zombie kinds. Multipliers can be changed by story decisions (G.save.world.mods).
+const KINDS = {
+  walker: { hp: 40, speed: 1.6, chase: 3.4, dmg: 9, shirt: 0x4b5a46, skin: 0x7d8f6a },
+  runner: { hp: 28, speed: 2.2, chase: 6.6, dmg: 7, shirt: 0x5a3b3b, skin: 0x8a9a74 },
+  brute:  { hp: 140, speed: 1.2, chase: 2.9, dmg: 22, shirt: 0x2d2d2d, skin: 0x6c7a5c, scale: 1.35 }
+};
+
+export const zombies = [];
+const tmpV = new THREE.Vector3();
+let flashLight;
+
+export function nearbyZombies(x, z, r) { return zombies.filter(zb => zb.alive && Math.hypot(zb.pos.x - x, zb.pos.z - z) < r); }
+
+function spawnZombie(x, z, kind) {
+  const k = KINDS[kind];
+  const mesh = makeHuman({ skin: k.skin, shirt: k.shirt, pants: 0x34302a });
+  if (k.scale) mesh.scale.setScalar(k.scale);
+  mesh.position.set(x, heightAt(x, z), z);
+  G.scene.add(mesh);
+  const mods = G.save.world.mods;
+  const zb = { mesh, pos: mesh.position, kind, k, hp: k.hp * (mods.zHp || 1), maxHp: k.hp, alive: true, state: 'wander',
+    rot: Math.random() * 6.28, wanderT: 0, atkCd: 0, atkAnim: 0, hitFlash: 0, deadT: 0, kx: 0, kz: 0 };
+  zombies.push(zb);
+  return zb;
+}
+
+// Spawn points can be placed by the world (hordes near towns, etc.)
+export function spawnGroup(x, z, n, kinds = ['walker']) {
+  for (let i = 0; i < n; i++) spawnZombie(x + (Math.random() - 0.5) * 12, z + (Math.random() - 0.5) * 12, kinds[Math.floor(Math.random() * kinds.length)]);
+}
+
+function maxZombies() {
+  const mods = G.save.world.mods;
+  return Math.round((isNight() ? 45 : 24) * (mods.density || 1));
+}
+
+function pickKind() {
+  const r = Math.random(), d = G.save.world.day;
+  if (r < Math.min(0.08, 0.02 * d)) return 'brute';
+  if (r < 0.2 + (isNight() ? 0.15 : 0)) return 'runner';
+  return 'walker';
+}
+
+function setFlash(zb, on) {
+  zb.mesh.traverse(o => { if (o.isMesh) { if (on) { o.userData.m = o.userData.m || o.material; o.material = hitMat; } else if (o.userData.m) o.material = o.userData.m; } });
+}
+const hitMat = new THREE.MeshBasicMaterial({ color: 0xff3020 });
+
+export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
+  if (!zb.alive) return;
+  zb.hp -= dmg; zb.hitFlash = 0.12; setFlash(zb, true);
+  const dx = zb.pos.x - fromX, dz = zb.pos.z - fromZ, l = Math.hypot(dx, dz) || 1;
+  zb.kx = dx / l * knock; zb.kz = dz / l * knock;
+  zb.state = 'chase';
+  if (zb.hp <= 0) {
+    zb.alive = false; zb.deadT = 0; setFlash(zb, false);
+    G.save.stats.kills++;
+    G.emit?.('zombieKilled', zb);
+  }
+}
+
+/* ---------- Player combat ---------- */
+const WEAPONS = {
+  fists: { dmg: 10, range: 1.8, arc: 1.2, cd: 0.45 },
+  bat:   { dmg: 24, range: 2.4, arc: 1.4, cd: 0.6 },
+  machete: { dmg: 38, range: 2.5, arc: 1.3, cd: 0.55 }
+};
+let meleeCd = 0, shootCd = 0;
+
+function melee() {
+  const P = G.player, w = WEAPONS[G.save.inv.melee] || WEAPONS.fists;
+  if (meleeCd > 0) return; meleeCd = w.cd; P.attackT = 1;
+  for (const zb of zombies) {
+    if (!zb.alive) continue;
+    const dx = zb.pos.x - P.pos.x, dz = zb.pos.z - P.pos.z, d = Math.hypot(dx, dz);
+    if (d > w.range * (zb.k.scale || 1)) continue;
+    let a = Math.atan2(dx, dz) - P.rot; a = Math.atan2(Math.sin(a), Math.cos(a));
+    if (Math.abs(a) < w.arc / 2 + 0.3) hitZombie(zb, w.dmg * (G.save.world.mods.playerDmg || 1), P.pos.x, P.pos.z, 5);
+  }
+  G.emit?.('noise', { x: P.pos.x, z: P.pos.z, r: 12 });
+}
+
+function shoot() {
+  const P = G.player, inv = G.save.inv;
+  if (shootCd > 0) return;
+  if (!inv.gun) { toast('You have no gun yet.', 1.2); shootCd = 0.6; return; }
+  if (inv.ammo <= 0) { toast('Out of ammo!', 1.2); shootCd = 0.6; return; }
+  inv.ammo--; shootCd = inv.gun === 'rifle' ? 0.9 : 0.35;
+  // face camera direction
+  P.rot = P.camYaw + Math.PI; P.aimT = 0.4;
+  const dir = new THREE.Vector3(); G.camera.getWorldDirection(dir);
+  const origin = G.camera.position;
+  let best = null, bestT = 60;
+  for (const zb of zombies) {
+    if (!zb.alive) continue;
+    tmpV.set(zb.pos.x, zb.pos.y + 1.2 * (zb.k.scale || 1), zb.pos.z).sub(origin);
+    const t = tmpV.dot(dir);
+    if (t < 0 || t > bestT) continue;
+    const perp = tmpV.addScaledVector(dir, -t).length();
+    if (perp < 0.7 * (zb.k.scale || 1)) { best = zb; bestT = t; }
+  }
+  const dmg = (inv.gun === 'rifle' ? 90 : 34) * (G.save.world.mods.playerDmg || 1);
+  if (best) hitZombie(best, dmg, P.pos.x, P.pos.z, 3);
+  flashLight.intensity = 30; flashLight.position.set(P.pos.x + Math.sin(P.rot), P.pos.y + 1.5, P.pos.z + Math.cos(P.rot));
+  G.emit?.('noise', { x: P.pos.x, z: P.pos.z, r: 60 });
+}
+
+/* ---------- System ---------- */
+let spawnT = 0;
+export const zombieSystem = {
+  init() {
+    flashLight = new THREE.PointLight(0xffc070, 0, 12); G.scene.add(flashLight);
+    addTouchButton('HIT', 'attack');
+    addTouchButton('SHOOT', 'shoot');
+    G.on?.('noise', n => { for (const zb of zombies) if (zb.alive && Math.hypot(zb.pos.x - n.x, zb.pos.z - n.z) < n.r) zb.state = 'chase'; });
+  },
+  update(dt) {
+    const P = G.player;
+    meleeCd -= dt; shootCd -= dt;
+    if (P.aimT > 0) P.aimT -= dt;
+    P.aiming = P.aimT > 0;
+    if (!G.dead) {
+      if (pressed('attack') || (down('attack') && meleeCd <= 0)) melee();
+      if (pressed('shoot') || (down('shoot') && shootCd <= 0)) shoot();
+    }
+    flashLight.intensity = Math.max(0, flashLight.intensity - dt * 300);
+    giveWeaponOnce();
+
+    // Spawning around the player (not in safe zones)
+    spawnT -= dt;
+    const alive = zombies.filter(z => z.alive).length;
+    if (spawnT <= 0 && alive < maxZombies()) {
+      spawnT = 0.6;
+      const a = Math.random() * 6.28, d = 55 + Math.random() * 45;
+      const x = P.pos.x + Math.sin(a) * d, z = P.pos.z + Math.cos(a) * d;
+      if (Math.abs(x) < 480 && Math.abs(z) < 480 && !(G.isSafe && G.isSafe(x, z))) spawnZombie(x, z, pickKind());
+    }
+
+    const night = isNight();
+    const sight = (night ? 34 : 24) * (P.sprinting ? 1.5 : 1) * (P.crouch ? 0.6 : 1);
+    for (let i = zombies.length - 1; i >= 0; i--) {
+      const zb = zombies[i];
+      const dx = P.pos.x - zb.pos.x, dz = P.pos.z - zb.pos.z, d = Math.hypot(dx, dz);
+      if (!zb.alive) {
+        zb.deadT += dt;
+        zb.mesh.rotation.x = Math.max(-Math.PI / 2, -zb.deadT * 5);
+        zb.mesh.position.y = heightAt(zb.pos.x, zb.pos.z) + 0.2;
+        if (zb.deadT > 8 || d > 150) { G.scene.remove(zb.mesh); zombies.splice(i, 1); }
+        continue;
+      }
+      if (d > 160) { G.scene.remove(zb.mesh); zombies.splice(i, 1); continue; }
+      if (zb.hitFlash > 0) { zb.hitFlash -= dt; if (zb.hitFlash <= 0) setFlash(zb, false); }
+
+      // pick a target: player or the nearest ally/NPC (set up by factions)
+      let tx = P.pos.x, tz = P.pos.z, td = G.dead ? 1e9 : d, target = null;
+      if (G.targetsForZombies) for (const t of G.targetsForZombies()) {
+        const e = Math.hypot(t.pos.x - zb.pos.x, t.pos.z - zb.pos.z);
+        if (e < td) { td = e; tx = t.pos.x; tz = t.pos.z; target = t; }
+      }
+      if (zb.state === 'wander' && td < sight) zb.state = 'chase';
+      if (zb.state === 'chase' && td > sight * 2.2) zb.state = 'wander';
+
+      let speed = 0;
+      const mods = G.save.world.mods;
+      if (zb.state === 'chase') {
+        const a = Math.atan2(tx - zb.pos.x, tz - zb.pos.z);
+        let r = a - zb.rot; r = Math.atan2(Math.sin(r), Math.cos(r)); zb.rot += r * Math.min(1, dt * 6);
+        const reach = 1.3 * (zb.k.scale || 1);
+        if (td > reach) speed = zb.k.chase * (mods.zSpeed || 1) * (night ? 1.15 : 1);
+        zb.atkCd -= dt;
+        if (td <= reach + 0.25 && zb.atkCd <= 0) {
+          zb.atkCd = 1.1; zb.atkAnim = 1;
+          if (target) target.hurt(zb.k.dmg, zb); else P.hurt(zb.k.dmg * (mods.zDmg || 1), 'zombie');
+        }
+      } else {
+        zb.wanderT -= dt;
+        if (zb.wanderT <= 0) { zb.wanderT = 2 + Math.random() * 5; zb.rot += (Math.random() - 0.5) * 2.5; zb.idle = Math.random() < 0.4; }
+        speed = zb.idle ? 0 : zb.k.speed * 0.5;
+      }
+      zb.atkAnim = Math.max(0, zb.atkAnim - dt * 2.5);
+      zb.pos.x += Math.sin(zb.rot) * speed * dt + zb.kx * dt;
+      zb.pos.z += Math.cos(zb.rot) * speed * dt + zb.kz * dt;
+      zb.kx *= Math.pow(0.02, dt); zb.kz *= Math.pow(0.02, dt);
+      // keep zombies apart
+      if (d < 40) for (const o of zombies) if (o !== zb && o.alive) {
+        const ex = zb.pos.x - o.pos.x, ez = zb.pos.z - o.pos.z, e2 = ex * ex + ez * ez;
+        if (e2 < 0.8 && e2 > 1e-4) { const e = Math.sqrt(e2), p = (0.9 - e) / e * 0.5; zb.pos.x += ex * p; zb.pos.z += ez * p; }
+      }
+      collide(zb.pos, 0.4 * (zb.k.scale || 1));
+      zb.pos.y = heightAt(zb.pos.x, zb.pos.z);
+      zb.mesh.rotation.y = zb.rot;
+      if (d < 90) animateHuman(zb.mesh, dt, speed / 4, { zombie: true, attack: zb.atkAnim });
+    }
+  }
+};
+
+let lastMelee = null;
+function giveWeaponOnce() {
+  const inv = G.save.inv, P = G.player;
+  const want = P.aiming && inv.gun ? inv.gun : inv.melee;
+  if (want !== lastMelee) { giveWeapon(P.mesh, want === 'machete' ? 'bat' : want); lastMelee = want; }
+}

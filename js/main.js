@@ -4,6 +4,9 @@ import { initInput, endFrame, input } from './input.js';
 import { buildTerrain, buildForest } from './world.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD } from './ui.js';
+import { dayNight } from './daynight.js';
+import { survival } from './survival.js';
+import { zombieSystem } from './zombies.js';
 
 const canvas = document.getElementById('game');
 document.getElementById('ver').textContent = 'v' + VERSION;
@@ -48,6 +51,8 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
+  G.systems = [dayNight, survival, zombieSystem];
+  for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
   G.running = true;
@@ -57,7 +62,7 @@ let last = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (G.running && !G.paused) {
+  if (G.running && !G.paused && !G.dead) {
     G.time += dt;
     updatePlayer(dt);
     for (const s of G.systems) s.update(dt);
