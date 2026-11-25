@@ -151,7 +151,7 @@ export const zombieSystem = {
     }
 
     const night = isNight();
-    const sight = (night ? 34 : 24) * (P.sprinting ? 1.5 : 1) * (P.crouch ? 0.6 : 1);
+    const sight = (night ? 34 : 24) * (P.sprinting ? 1.5 : 1) * (G.save.world.mods.stealth || 1);
     for (let i = zombies.length - 1; i >= 0; i--) {
       const zb = zombies[i];
       const dx = P.pos.x - zb.pos.x, dz = P.pos.z - zb.pos.z, d = Math.hypot(dx, dz);

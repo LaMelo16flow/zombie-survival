@@ -7,6 +7,7 @@ import { initHUD, updateHUD, uiSystem } from './ui.js';
 import { interactSystem } from './interact.js';
 import { npcSystem } from './npc.js';
 import { factionSystem } from './factions.js';
+import { storySystem } from './story.js';
 import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
 import { dayNight } from './daynight.js';
 import { survival } from './survival.js';
@@ -57,7 +58,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, uiSystem];
+  G.systems = [dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
@@ -87,4 +88,5 @@ buildWorld();
 G.camera.position.set(30, 40, 30); G.camera.lookAt(0, 0, 0);
 document.getElementById('btn-new').onclick = () => startGame(newSave());
 requestAnimationFrame(loop);
+G.newGame = () => location.reload();
 window.G = G; // handy for debugging in the browser console

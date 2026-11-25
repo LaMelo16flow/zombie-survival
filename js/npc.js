@@ -88,7 +88,7 @@ export const npcSystem = {
         else if (zt && zt.d < 14) moveToward(n, zt.z.pos.x, zt.z.pos.z, 4.5, dt);
         else if (dP > 3.5) moveToward(n, P.pos.x, P.pos.z, dP > 12 ? 8.5 : (P.sprinting ? 8 : 4.6), dt);
         if (dP > 60) { n.pos.x = P.pos.x - 2; n.pos.z = P.pos.z - 2; } // catch up
-      } else if (isHostile(n) && dP < 26 && !G.dead) {
+      } else if (isHostile(n) && dP < (n.role === 'raider' ? 150 : 26) && !G.dead) {
         if (!attack(n, P, dP, true)) moveToward(n, P.pos.x, P.pos.z, 4.2, dt);
         else n.rot = Math.atan2(P.pos.x - n.pos.x, P.pos.z - n.pos.z);
       } else if (zt && n.role !== 'wanderer') {

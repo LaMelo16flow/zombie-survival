@@ -297,3 +297,32 @@ export const factionSystem = {
     if (G.baseFlag) G.baseFlag.rotation.y = Math.sin(G.time * 2) * 0.3;
   }
 };
+
+// Remove a whole faction from the world (story consequence).
+export function destroyFaction(f) {
+  const fs = G.save.factions;
+  if (!fs.destroyed.includes(f)) fs.destroyed.push(f);
+  fs.allies = fs.allies.filter(a => a !== f);
+  for (const n of [...npcs]) if (n.faction === f) { n.faction = null; n.hurt(9999); }
+}
+
+// Hostile raiders appear near a point (used by story raids).
+export function spawnRaiders(f, x, z, count) {
+  const F = FACTIONS[f], out = [];
+  for (let i = 0; i < count; i++) {
+    const n = spawnNPC({ name: randomName(), faction: f, role: 'raider', shirt: F.shirt, hat: F.hat, x: x + (Math.random() - 0.5) * 10, z: z + (Math.random() - 0.5) * 10, weapon: F.weapons[i % F.weapons.length] });
+    n.home = { x: G.player.pos.x, z: G.player.pos.z };
+    out.push(n);
+  }
+  return out;
+}
+
+// Add a named, special member (e.g. the doctor) directly.
+export function addSpecialMember(name, special, weapon = 'pistol') {
+  const mine = G.save.factions.player; if (!mine) return null;
+  const P = G.player.pos;
+  const data = { id: Date.now() + Math.random(), name, hp: 100, weapon, mode: 'follow', x: P.x + 2, z: P.z + 2, special };
+  mine.members.push(data);
+  spawnMember(data);
+  return data;
+}
