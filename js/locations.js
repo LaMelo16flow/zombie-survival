@@ -23,13 +23,13 @@ export const LOCATIONS = [
 ];
 
 const LOOT = {
-  town:     { food: [0, 2], water: [0, 2], meds: [0, 1], wood: [0, 2], scrap: [0, 1], ammo: [0, 3], fuel: [0, 1] },
-  gas:      { food: [1, 3], water: [1, 3], scrap: [1, 3], fuel: [1, 2] },
-  farm:     { food: [1, 4], water: [0, 2], wood: [2, 5] },
-  hospital: { meds: [1, 3], water: [0, 2] },
-  military: { ammo: [4, 12], meds: [0, 1], scrap: [1, 2], fuel: [0, 1], gun: 0.25 },
-  mall:     { food: [1, 3], water: [1, 3], scrap: [0, 2], melee: 0.2 },
-  lab:      { meds: [1, 2], scrap: [1, 3] },
+  town:     { food: [0, 2], water: [0, 2], meds: [0, 1], wood: [0, 2], scrap: [0, 1], ammo: [0, 3], fuel: [0, 1], cloth: [0, 2] },
+  gas:      { food: [1, 3], water: [1, 3], scrap: [1, 3], fuel: [1, 2], metal: [0, 1] },
+  farm:     { food: [1, 4], water: [0, 2], wood: [2, 5], seeds: [1, 3], veg: [0, 2], rope: [0, 1] },
+  hospital: { meds: [1, 3], water: [0, 2], cloth: [1, 3], bandage: [0, 2] },
+  military: { ammo: [4, 12], meds: [0, 1], scrap: [1, 2], fuel: [0, 1], metal: [1, 2], gun: 0.25 },
+  mall:     { food: [1, 3], water: [1, 3], scrap: [0, 2], cloth: [1, 3], melee: 0.2 },
+  lab:      { meds: [1, 2], scrap: [1, 3], metal: [0, 2], herbs: [0, 2] },
   camp: {}, raider: {}, tower: {}
 };
 
@@ -88,8 +88,9 @@ function crate(scene, id, x, z, type) {
 export function giveLoot(type) {
   const t = LOOT[type] || LOOT.town, inv = G.save.inv, got = [];
   for (const [k, v] of Object.entries(t)) {
-    if (k === 'gun') { if (Math.random() < v) { const g = inv.gun === 'pistol' || Math.random() < 0.5 ? 'rifle' : 'pistol'; if (inv.gun !== 'rifle') { inv.gun = g; got.push('a ' + g + '!'); inv.ammo += 6; } } continue; }
-    if (k === 'melee') { if (Math.random() < v && inv.melee !== 'machete') { inv.melee = 'machete'; got.push('a machete!'); } continue; }
+    const own = (list, w) => { inv[list] = inv[list] || []; if (!inv[list].includes(w)) inv[list].push(w); };
+    if (k === 'gun') { if (Math.random() < v) { const g = Math.random() < 0.4 ? 'rifle' : Math.random() < 0.5 ? 'shotgun' : 'pistol'; if (!(inv.ownedGuns || []).includes(g)) { own('ownedGuns', g); inv.gun = inv.gun || g; got.push('a ' + g + '!'); } inv.ammo += 6; } continue; }
+    if (k === 'melee') { if (Math.random() < v && !(inv.ownedMelee || []).includes('machete')) { own('ownedMelee', 'machete'); inv.melee = 'machete'; got.push('a machete!'); } continue; }
     const n = v[0] + Math.floor(Math.random() * (v[1] - v[0] + 1));
     if (n > 0) { inv[k] = (inv[k] || 0) + n; got.push(`${n} ${k}`); }
   }

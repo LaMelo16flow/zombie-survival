@@ -7,6 +7,7 @@ import { isNight } from './daynight.js';
 import { toast, damageNumber } from './ui.js';
 import { burst, impact } from './effects.js';
 import { sfx } from './audio.js';
+import { MELEE, GUNS } from './items.js';
 
 // Zombie kinds. Multipliers can be changed by story decisions (G.save.world.mods).
 const KINDS = {
@@ -75,11 +76,7 @@ export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
 }
 
 /* ---------- Player combat ---------- */
-const WEAPONS = {
-  fists: { dmg: 10, range: 1.8, arc: 1.2, cd: 0.45 },
-  bat:   { dmg: 24, range: 2.4, arc: 1.4, cd: 0.6 },
-  machete: { dmg: 38, range: 2.5, arc: 1.3, cd: 0.55 }
-};
+const WEAPONS = MELEE;
 let meleeCd = 0, shootCd = 0;
 
 function melee() {
@@ -94,7 +91,7 @@ function melee() {
     const dx = zb.pos.x - P.pos.x, dz = zb.pos.z - P.pos.z, d = Math.hypot(dx, dz);
     if (d > w.range * (zb.k.scale || 1)) continue;
     let a = Math.atan2(dx, dz) - P.rot; a = Math.atan2(Math.sin(a), Math.cos(a));
-    if (Math.abs(a) < w.arc / 2 + 0.3) hitZombie(zb, w.dmg * (G.save.world.mods.playerDmg || 1), P.pos.x, P.pos.z, 5);
+    if (Math.abs(a) < w.arc / 2 + 0.3) hitZombie(zb, w.dmg * (G.save.world.mods.playerDmg || 1) * (G.skillMul?.('melee') || 1), P.pos.x, P.pos.z, 5);
   }
   for (const n of G.hostileTargets?.() || []) {
     const dx = n.pos.x - P.pos.x, dz = n.pos.z - P.pos.z;
@@ -108,27 +105,34 @@ function melee() {
 function shoot() {
   const P = G.player, inv = G.save.inv;
   if (shootCd > 0) return;
-  if (!inv.gun) { toast('You have no gun yet.', 1.2); shootCd = 0.6; return; }
-  if (inv.ammo <= 0) { toast('Out of ammo!', 1.2); sfx.empty(); shootCd = 0.6; return; }
-  inv.ammo--; sfx.gun(inv.gun); shootCd = inv.gun === 'rifle' ? 0.9 : 0.35;
+  if (!inv.gun) { toast('You have no ranged weapon yet.', 1.2); shootCd = 0.6; return; }
+  const gun = GUNS[inv.gun] || GUNS.pistol, ammoKey = gun.ammo;
+  if ((inv[ammoKey] || 0) <= 0) { toast(ammoKey === 'bolts' ? 'Out of bolts!' : 'Out of bullets!', 1.2); sfx.empty(); shootCd = 0.6; return; }
+  inv[ammoKey]--; inv.gun === 'crossbow' ? sfx.swing() : sfx.gun(inv.gun); shootCd = gun.cd;
   // face camera direction
   P.rot = P.camYaw + Math.PI; P.aimT = 0.4;
   const dir = new THREE.Vector3(); G.camera.getWorldDirection(dir);
   const origin = G.camera.position;
-  let best = null, bestT = 60;
-  for (const zb of [...zombies, ...(G.hostileTargets?.() || []).map(n => ({ alive: true, pos: n.pos, k: {}, npc: n }))]) {
-    if (!zb.alive) continue;
-    tmpV.set(zb.pos.x, zb.pos.y + 1.2 * (zb.k.scale || 1), zb.pos.z).sub(origin);
-    const t = tmpV.dot(dir);
-    if (t < 0 || t > bestT) continue;
-    const perp = tmpV.addScaledVector(dir, -t).length();
-    if (perp < 0.7 * (zb.k.scale || 1)) { best = zb; bestT = t; }
+  const dmg = gun.dmg * (G.save.world.mods.playerDmg || 1) * (G.skillMul?.('ranged') || 1);
+  const targets = [...zombies, ...(G.hostileTargets?.() || []).map(n => ({ alive: true, pos: n.pos, k: {}, npc: n })), ...(G.extraTargets?.() || [])];
+  // shotgun: a cone of pellets, each hits the nearest thing along its line
+  for (let p = 0; p < (gun.pellets || 1); p++) {
+    const d = dir.clone();
+    if (gun.pellets) { d.x += (Math.random() - 0.5) * 0.12; d.y += (Math.random() - 0.5) * 0.08; d.z += (Math.random() - 0.5) * 0.12; d.normalize(); }
+    let best = null, bestT = gun.pellets ? 25 : 60;
+    for (const zb of targets) {
+      if (!zb.alive) continue;
+      tmpV.set(zb.pos.x, zb.pos.y + (zb.aimY ?? 1.2 * (zb.k.scale || 1)), zb.pos.z).sub(origin);
+      const t = tmpV.dot(d);
+      if (t < 0 || t > bestT) continue;
+      const perp = tmpV.addScaledVector(d, -t).length();
+      if (perp < (zb.hitR ?? 0.7 * (zb.k.scale || 1))) { best = zb; bestT = t; }
+    }
+    if (best?.npc) best.npc.hurt(dmg); else if (best?.onHit) best.onHit(dmg); else if (best) hitZombie(best, dmg, P.pos.x, P.pos.z, gun.pellets ? 1.5 : 3);
   }
-  const dmg = (inv.gun === 'rifle' ? 90 : 34) * (G.save.world.mods.playerDmg || 1);
-  if (best?.npc) best.npc.hurt(dmg); else if (best) hitZombie(best, dmg, P.pos.x, P.pos.z, 3);
   impact(P.pos.x + Math.sin(P.rot) * 0.9, P.pos.y + 1.4, P.pos.z + Math.cos(P.rot) * 0.9, 0xffd060, 0.45);
   flashLight.intensity = 30; flashLight.position.set(P.pos.x + Math.sin(P.rot), P.pos.y + 1.5, P.pos.z + Math.cos(P.rot));
-  G.emit?.('noise', { x: P.pos.x, z: P.pos.z, r: 60 });
+  G.emit?.('noise', { x: P.pos.x, z: P.pos.z, r: gun.noise });
 }
 
 /* ---------- System ---------- */

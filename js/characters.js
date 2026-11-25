@@ -149,6 +149,11 @@ const WEAPON_GEO = {
   bat: () => { const h = cyl(0.03, 0.03, 0.3, 6); h.translate(0, 0.1, 0); const b = cyl(0.06, 0.035, 0.6, 7); b.translate(0, 0.55, 0); return merge([P(h, 0x3a2a20), P(b, 0xc89a5a)]); },
   machete: () => { const h = new THREE.BoxGeometry(0.05, 0.2, 0.05); h.translate(0, 0.05, 0); const bl = new THREE.BoxGeometry(0.02, 0.6, 0.11); bl.translate(0, 0.45, 0.02); return merge([P(h, 0x222222), P(bl, 0xd8dde3)]); },
   pistol: () => { const s = new THREE.BoxGeometry(0.07, 0.09, 0.3); s.translate(0, 0.02, 0.08); const gr = new THREE.BoxGeometry(0.06, 0.16, 0.08); gr.rotateX(0.25); gr.translate(0, -0.07, -0.02); return merge([P(s, 0x2b2e36), P(gr, 0x4a3a2a)]); },
+  spear: () => { const sh = cyl(0.03, 0.03, 1.6, 6); sh.translate(0, 0.5, 0); const tip = new THREE.ConeGeometry(0.06, 0.3, 5); tip.translate(0, 1.43, 0); return merge([P(sh, 0x8a6a44), P(tip, 0xece4d4)]); },
+  axe: () => { const h = cyl(0.035, 0.035, 0.9, 6); h.translate(0, 0.35, 0); const hd = new THREE.BoxGeometry(0.06, 0.22, 0.3); hd.translate(0, 0.72, 0.1); return merge([P(h, 0xc0392b), P(hd, 0xbfc6cd)]); },
+  katana: () => { const h = cyl(0.03, 0.03, 0.26, 6); h.translate(0, 0.05, 0); const g = new THREE.BoxGeometry(0.14, 0.03, 0.1); g.translate(0, 0.19, 0); const b = new THREE.BoxGeometry(0.02, 0.85, 0.06); b.translate(0, 0.62, 0); return merge([P(h, 0x2a1f3d), P(g, 0xffc94a), P(b, 0xf0f4f8)]); },
+  shotgun: () => { const s = cyl(0.04, 0.04, 0.75, 6); s.rotateX(Math.PI / 2); s.translate(0, 0.04, 0.3); const st = new THREE.BoxGeometry(0.08, 0.14, 0.4); st.translate(0, -0.02, -0.12); return merge([P(s, 0x2b2e36), P(st, 0x7a5236)]); },
+  crossbow: () => { const s = new THREE.BoxGeometry(0.07, 0.08, 0.6); s.translate(0, 0, 0.15); const bow = new THREE.BoxGeometry(0.7, 0.04, 0.05); bow.translate(0, 0.02, 0.4); const bolt = cyl(0.012, 0.012, 0.5, 4); bolt.rotateX(Math.PI / 2); bolt.translate(0, 0.06, 0.2); return merge([P(s, 0x6b4a2b), P(bow, 0x2a2622), P(bolt, 0xe8e4d8)]); },
   rifle: () => { const s = new THREE.BoxGeometry(0.07, 0.1, 0.9); s.translate(0, 0.02, 0.28); const st = new THREE.BoxGeometry(0.07, 0.15, 0.25); st.translate(0, -0.03, -0.15); const sc = cyl(0.03, 0.03, 0.2, 6); sc.rotateX(Math.PI / 2); sc.translate(0, 0.1, 0.25); return merge([P(s, 0x2f3328), P(st, 0x5a4030), P(sc, 0x111111)]); }
 };
 const wCache = {};

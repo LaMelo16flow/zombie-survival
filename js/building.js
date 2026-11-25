@@ -7,6 +7,7 @@ import { toon, paint, merge } from './style.js';
 import { toast, showChoice, showModal, closeModal, icon } from './ui.js';
 import { zombies, hitZombie } from './zombies.js';
 import { sfx } from './audio.js';
+import { ITEMS } from './items.js';
 import { burst } from './effects.js';
 
 /*
@@ -28,7 +29,8 @@ export const PIECES = {
   fire:  { name: 'Campfire', cost: { wood: 3 }, hp: 50, size: [1.4, 1.4], desc: 'Light + heals you nearby' },
   bed:   { name: 'Bed', cost: { wood: 5 }, hp: 60, size: [1.2, 2.2], desc: 'Sleep until morning' },
   bench: { name: 'Workbench', cost: { wood: 4, scrap: 4 }, hp: 80, size: [2, 1], desc: 'Craft ammo, meds, weapons' },
-  chest: { name: 'Storage box', cost: { wood: 4 }, hp: 80, size: [1.2, 0.8], desc: 'Store items safely' }
+  chest: { name: 'Storage box', cost: { wood: 4 }, hp: 80, size: [1.2, 0.8], desc: 'Store items safely' },
+  forge: { name: 'Forge', cost: { stone: 12, scrap: 4, wood: 4 }, hp: 200, size: [1.8, 1.8], desc: 'Smelt metal, tier 2–3 gear' }
 };
 const ORDER = Object.keys(PIECES);
 
@@ -56,6 +58,10 @@ function model(type, open = false) {
   } else if (type === 'bench') {
     g.push(P(box(2, 0.15, 1, 0, 0.95), WOOD)); for (const x of [-0.85, 0.85]) for (const z of [-0.4, 0.4]) g.push(P(box(0.12, 0.95, 0.12, x, 0.47, z), WOOD_D));
     g.push(P(box(0.4, 0.3, 0.3, -0.5, 1.15), METAL)); g.push(P(box(0.6, 0.05, 0.1, 0.4, 1.06, 0.2), 0xc9372c));
+  } else if (type === 'forge') {
+    g.push(P(box(1.8, 1.2, 1.8, 0, 0.6), 0x8f8a84)); g.push(P(box(1.9, 0.2, 1.9, 0, 1.25), 0x6d6863));
+    g.push(P(box(0.8, 0.55, 0.1, 0, 0.55, 0.9), 0xff7a2a)); g.push(P(box(0.5, 1.6, 0.5, 0.5, 2.1, -0.5), 0x6d6863));
+    for (let i = 0; i < 6; i++) g.push(P(box(0.36, 0.2, 0.05, -0.6 + (i % 3) * 0.6, 0.25 + Math.floor(i / 3) * 0.6, 0.91), 0x7a746e));
   } else if (type === 'chest') {
     g.push(P(box(1.2, 0.6, 0.8, 0, 0.3), WOOD)); g.push(P(box(1.24, 0.15, 0.84, 0, 0.68), WOOD_D)); g.push(P(box(0.16, 0.2, 0.05, 0, 0.5, 0.42), METAL));
   }
@@ -77,6 +83,7 @@ function spawnPiece(data) {
   const r = { data, mesh };
   if (def.blocks && !data.open) r.coll = addOBox(data.x, data.z, def.size[0], def.size[1], data.rot);
   if (data.type === 'bed' || data.type === 'bench' || data.type === 'chest') r.coll = addCircle(data.x, data.z, 0.6);
+  if (data.type === 'forge') r.coll = addCircle(data.x, data.z, 1);
   if (data.type === 'fire') {
     r.light = new THREE.PointLight(0xffa040, 0, 14, 1.6); r.light.position.set(data.x, mesh.position.y + 1, data.z); G.scene.add(r.light);
     const fl = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 6), new THREE.MeshBasicMaterial({ color: 0xffb030 }));
@@ -85,9 +92,10 @@ function spawnPiece(data) {
   const actions = {
     door: { label: () => data.open ? 'Close door' : 'Open door', action: () => toggleDoor(r) },
     bed: { label: () => 'Sleep', action: () => sleep() },
-    bench: { label: () => 'Use workbench', action: () => craftMenu() },
+    bench: { label: () => 'Use workbench', action: () => G.openCrafting('bench') },
+    forge: { label: () => 'Use forge', action: () => G.openCrafting('forge') },
     chest: { label: () => 'Open storage box', action: () => openChest(data) },
-    fire: { label: () => 'Warm up by the fire', action: () => toast('The fire heals you while you stay close.') }
+    fire: { label: () => 'Cook at the campfire', action: () => G.openCrafting('fire') }
   }[data.type];
   if (actions) r.inter = addInteractable({ x: data.x, z: data.z, r: 2.2, ...actions });
   placed.push(r);
@@ -116,28 +124,12 @@ function sleep() {
   const s = G.save.stats; s.hp = s.maxHp; s.hunger = Math.max(0, s.hunger - 15); s.thirst = Math.max(0, s.thirst - 20);
   G.banner?.('Day ' + w.day, 'YOU WAKE UP RESTED');
 }
-const RECIPES = [
-  { name: '6 ammo', cost: { scrap: 3 }, give: inv => { inv.ammo += 6; } },
-  { name: '1 meds (bandages)', cost: { scrap: 1, water: 1 }, give: inv => { inv.meds += 1; } },
-  { name: 'Machete', cost: { scrap: 5, wood: 2 }, give: inv => { inv.melee = 'machete'; }, show: inv => inv.melee !== 'machete' },
-  { name: 'Pistol', cost: { scrap: 8, wood: 1 }, give: inv => { inv.gun = inv.gun || 'pistol'; inv.ammo += 4; }, show: inv => !inv.gun },
-  { name: 'Rifle', cost: { scrap: 14, wood: 3 }, give: inv => { inv.gun = 'rifle'; inv.ammo += 6; }, show: inv => inv.gun !== 'rifle' },
-  { name: '4 wood (break scrap crates)', cost: { scrap: 2 }, give: inv => { inv.wood += 4; } }
-];
-function craftMenu() {
-  const inv = G.save.inv;
-  showChoice('Workbench', `You have ${inv.wood} wood, ${inv.scrap} scrap, ${inv.water} water.`, [
-    ...RECIPES.filter(r => !r.show || r.show(inv)).map(r => ({ label: `Craft ${r.name}`, note: costText(r.cost), disabled: !has(r.cost),
-      fn: () => { pay(r.cost); r.give(inv); sfx.pickup(); toast(`Crafted <b>${r.name}</b>`); craftMenu(); } })),
-    { label: 'Done' }
-  ]);
-}
-const STORE = ['food', 'water', 'meds', 'wood', 'scrap', 'ammo'];
+const STORE = ['food', 'water', 'meds', 'meat', 'wood', 'stone', 'scrap', 'metal', 'cloth', 'leather', 'ammo', 'bolts'];
 function openChest(data) {
   data.stash = data.stash || {};
   const inv = G.save.inv, st = data.stash;
   showModal(`<div class="panel"><h2>Storage box</h2><p>Keep spare supplies at your base.</p>
-    ${STORE.map(k => `<div class="row"><span>${icon(k)} ${k}</span><span>bag ${inv[k] || 0} · box ${st[k] || 0}
+    ${STORE.map(k => `<div class="row"><span>${icon(ITEMS[k].icon)} ${ITEMS[k].name}</span><span>bag ${inv[k] || 0} · box ${st[k] || 0}
       <button class="small" data-in="${k}" ${inv[k] ? '' : 'disabled'}>Put in</button> <button class="small" data-out="${k}" ${st[k] ? '' : 'disabled'}>Take</button></span></div>`).join('')}
     <button class="primary" id="ch-close">Close</button></div>`);
   document.querySelectorAll('[data-in]').forEach(b => b.onclick = () => { const k = b.dataset.in; st[k] = (st[k] || 0) + inv[k]; inv[k] = 0; openChest(data); });
@@ -201,6 +193,7 @@ function demolish() {
 
 export const buildingSystem = {
   init() {
+    G.nearStation = type => placed.some(r => r.data.type === type && Math.hypot(r.data.x - G.player.pos.x, r.data.z - G.player.pos.z) < 4.5);
     G.save.builds = G.save.builds || [];
     for (const b of G.save.builds) spawnPiece(b);
     bar = document.createElement('div'); bar.id = 'buildbar'; bar.className = 'hidden';
@@ -240,8 +233,8 @@ export const buildingSystem = {
     }
     if (!building) return;
     if (pressed('slot1')) sel = 0; if (pressed('slot2')) sel = 1; if (pressed('slot3')) sel = 2;
-    for (let i = 4; i <= 7; i++) if (pressed('slot' + i)) sel = i - 1;
-    if (pressed('slot1') || pressed('slot2') || pressed('slot3') || [4, 5, 6, 7].some(i => pressed('slot' + i))) renderBar();
+    for (let i = 4; i <= 9; i++) if (pressed('slot' + i) && i <= ORDER.length) sel = i - 1;
+    if ([1, 2, 3, 4, 5, 6, 7, 8, 9].some(i => pressed('slot' + i))) { sel = Math.min(sel, ORDER.length - 1); renderBar(); }
     if (pressed('rotate')) rot += Math.PI / 2;
     if (pressed('attack')) place();
     if (pressed('demolish')) demolish();

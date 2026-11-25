@@ -172,6 +172,17 @@ function buildWater(scene) {
   scene.add(water);
 }
 
+// Resource spots you can gather from (trees → wood, big rocks → stone/metal, bushes → berries/herbs)
+export const spots = { tree: [], rock: [], bush: [] };
+const spotGrid = new Map();
+export function nearestSpot(kind, x, z, r) {
+  if (!spotGrid.has(kind)) { const g = new Map(); for (const s of spots[kind]) { const k = Math.floor(s.x / 10) + ',' + Math.floor(s.z / 10); if (!g.has(k)) g.set(k, []); g.get(k).push(s); } spotGrid.set(kind, g); }
+  const g = spotGrid.get(kind), cx = Math.floor(x / 10), cz = Math.floor(z / 10);
+  let best = null, bd = r;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const s of g.get((cx + i) + ',' + (cz + j)) || []) { const d = Math.hypot(s.x - x, s.z - z); if (d < bd) { bd = d; best = s; } }
+  return best;
+}
+
 export function buildForest(scene, avoid = () => false) {
   const r = rng(SEED + 7);
   const dry = (x, z) => heightAt(x, z) > WATER + 0.8;
@@ -210,7 +221,7 @@ export function buildForest(scene, avoid = () => false) {
     else if (!pine && nr < N) { rounds.setMatrixAt(nr, m); rounds.setColorAt(nr++, c.setHSL(0.22 + r() * 0.1, 0.6, 0.42 + r() * 0.1)); }
     else continue;
     trunks.setMatrixAt(nt++, m);
-    addCircle(x, z, 0.5 * sc);
+    addCircle(x, z, 0.5 * sc); spots.tree.push({ x, z, i: spots.tree.length });
   }
   trunks.count = nt; pines.count = np; rounds.count = nr;
   for (const t of [trunks, pines, rounds]) { t.castShadow = true; scene.add(t); }
@@ -225,7 +236,7 @@ export function buildForest(scene, avoid = () => false) {
     q.setFromEuler(new THREE.Euler(r() * 3, r() * 3, r() * 3));
     m.compose(p.set(x, heightAt(x, z), z), q, s.set(sc, sc * 0.7, sc));
     rocks.setMatrixAt(k++, m);
-    if (sc > 1) addCircle(x, z, sc * 0.8);
+    if (sc > 1) { addCircle(x, z, sc * 0.8); spots.rock.push({ x, z, i: spots.rock.length }); }
   }
   rocks.count = k; rocks.castShadow = true;
   scene.add(rocks);
@@ -248,4 +259,21 @@ export function buildForest(scene, avoid = () => false) {
   }
   grass.count = g; flowers.count = f;
   scene.add(grass, flowers);
+
+  // Berry / herb bushes
+  const bushGeo = merge([new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.6, 0), new THREE.IcosahedronGeometry(0.6, 1).translate(0.6, 0.45, 0.2), new THREE.IcosahedronGeometry(0.55, 1).translate(-0.5, 0.45, -0.2)]);
+  const NB = 600, bushes = new THREE.InstancedMesh(bushGeo, toon(0xffffff), NB);
+  const dots = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.1, 0), toon(0xffffff), NB * 4);
+  let nb = 0, nd = 0;
+  for (let i = 0; i < NB * 4 && nb < NB; i++) {
+    const x = (r() - 0.5) * (WORLD_SIZE - 60), z = (r() - 0.5) * (WORLD_SIZE - 60), h = heightAt(x, z);
+    if (h < WATER + 1 || h > 38 || avoid(x, z)) continue;
+    const herb = r() < 0.4;
+    m.compose(p.set(x, h, z), q.setFromAxisAngle(up, r() * 6), s.set(1, 1, 1));
+    bushes.setMatrixAt(nb, m); bushes.setColorAt(nb, c.setHSL(herb ? 0.3 : 0.36, 0.5, herb ? 0.42 : 0.3));
+    for (let k = 0; k < 4; k++) { m.compose(p.set(x + (r() - 0.5) * 1.2, h + 0.7 + r() * 0.6, z + (r() - 0.5) * 1.2), q, s.set(1, 1, 1)); dots.setMatrixAt(nd, m); dots.setColorAt(nd++, c.set(herb ? 0xf4f0ff : 0xe8364a)); }
+    spots.bush.push({ x, z, i: nb, herb }); nb++;
+  }
+  bushes.count = nb; dots.count = nd;
+  scene.add(bushes, dots);
 }

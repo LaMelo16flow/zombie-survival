@@ -3,6 +3,7 @@ import { clamp } from './util.js';
 import { toast, showDeath } from './ui.js';
 import { burst, shake } from './effects.js';
 import { sfx } from './audio.js';
+import { ARMOR } from './items.js';
 
 // Hunger/thirst drop over time; at zero they hurt you. Sprinting uses stamina.
 export const survival = {
@@ -30,6 +31,7 @@ export function damage(dmg, from) {
   const s = G.save.stats;
   if (G.dead) return;
   if (G.driving && from !== 'crash') dmg *= 0.3;   // the car protects you
+  if (from !== 'starving') dmg *= 1 - (ARMOR[G.save.inv.armor] || ARMOR.none).block;   // armour
   s.hp -= dmg;
   if (dmg > 2) {
     sfx.hurt(); const p = G.player.pos; burst(p.x, p.y + 1.2, p.z, 0xa0101a, 7, 3); shake(Math.min(0.35, dmg / 40));

@@ -3,6 +3,7 @@ import { clockText, isNight } from './daynight.js';
 import { pressed, addTouchButton } from './input.js';
 import { LOCATIONS } from './locations.js';
 import { WORLD_SIZE, heightAt, WATER } from './world.js';
+import { ITEMS, MELEE, GUNS, ARMOR } from './items.js';
 
 const $ = id => document.getElementById(id);
 let toastTimer = 0, bannerTimer = 0;
@@ -21,7 +22,15 @@ const PATHS = {
   sun: 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM11 1h2v4h-2zm0 18h2v4h-2zM1 11h4v2H1zm18 0h4v2h-4zM4.2 2.8l2.8 2.8-1.4 1.4-2.8-2.8zm14.2 14.2 2.8 2.8-1.4 1.4-2.8-2.8zM2.8 19.8l2.8-2.8 1.4 1.4-2.8 2.8zM17 5.6l2.8-2.8 1.4 1.4-2.8 2.8z',
   moon: 'M14.5 2A9.5 9.5 0 1 0 22 16.5 8 8 0 0 1 14.5 2z',
   bat: 'M17.6 3.6 20.4 6.4 9 17.8l-2.8-2.8zM6.2 15 9 17.8 5.4 21.4 2.6 18.6z',
-  gun: 'M3 7h16l2 2v3h-6l-1 2h-3l-1 6H6l1-6H3z'
+  gun: 'M3 7h16l2 2v3h-6l-1 2h-3l-1 6H6l1-6H3z',
+  meat: 'M15.5 3a5.5 5.5 0 0 1 3.9 9.4l-5 5a4 4 0 0 1-5.4.2L6.6 20a2 2 0 1 1-2.8-2.8l2.4-2.4a4 4 0 0 1 .2-5.4l5-5A5.5 5.5 0 0 1 15.5 3z',
+  leaf: 'M20 3C9 3 4 9 4 16c0 1.5.3 3 .8 4l1.6-1.6C9 12 13 9 17 8c-4 2-7.5 6-9 11 1 .3 2 .5 3 .5 7 0 10-7 9-16.5z',
+  stone: 'M7 6l6-3 7 5 1 8-6 5H8l-5-6 1-6z',
+  metal: 'M3 15l4-6h14l-4 6zm0 2h14v3H3z',
+  cloth: 'M4 5c3 2 5 2 8 0s5-2 8 0v14c-3-2-5-2-8 0s-5 2-8 0z',
+  leather: 'M6 3h12l2 5-3 13H7L4 8zm3 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
+  bone: 'M7 3a2.5 2.5 0 0 1 2.3 3.5l8.2 8.2A2.5 2.5 0 1 1 21 17a2.5 2.5 0 1 1-3.5 3.3l-8.2-8.2A2.5 2.5 0 1 1 6 7.5 2.5 2.5 0 0 1 7 3z',
+  shield: 'M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z'
 };
 export const icon = n => `<svg class="i" viewBox="0 0 24 24"><path d="${PATHS[n] || PATHS.scrap}"/></svg>`;
 
@@ -98,7 +107,7 @@ export function updateHUD(dt) {
   $('portrait').style.setProperty('--hp', (st.hp / st.maxHp * 100) + '%');
   const inv = G.save.inv;
   const html = `<div class="t">${icon(isNight() ? 'moon' : 'sun')}${clockText()}</div>
-    <div class="s"><span>${icon('skull')}${st.kills}</span>${inv.gun ? `<span>${icon('ammo')}${inv.ammo}</span>` : ''}</div>`;
+    <div class="s"><span>${icon('skull')}${st.kills}</span>${inv.gun ? `<span>${icon('ammo')}${inv[(GUNS[inv.gun] || GUNS.pistol).ammo] || 0}</span>` : ''}</div>`;
   if ($('clock')._h !== html) { $('clock').innerHTML = html; $('clock')._h = html; }
   updateDamageNumbers(dt);
   $('crosshair').style.display = G.driving || G.building ? 'none' : '';
@@ -154,28 +163,33 @@ function drawMinimap() {
 }
 
 /* ---------- Inventory ---------- */
-const USE = {
-  food:  { label: 'Eat',   fx: s => { s.hunger = Math.min(100, s.hunger + 35); }, msg: 'You eat. <b>+35 food</b>' },
-  water: { label: 'Drink', fx: s => { s.thirst = Math.min(100, s.thirst + 40); }, msg: 'You drink. <b>+40 water</b>' },
-  meds:  { label: 'Heal',  fx: s => { s.hp = Math.min(s.maxHp, s.hp + 45); }, msg: 'You patch yourself up. <b>+45 health</b>' }
-};
-const ITEMS = { food: 'food', water: 'water', meds: 'meds', wood: 'wood', scrap: 'scrap', ammo: 'ammo' };
-
+const GROUPS = [
+  ['Food & medicine', ['food', 'water', 'meds', 'bandage', 'herbmed', 'meat', 'jerky', 'stew', 'berries', 'veg', 'rawmeat', 'lakewater']],
+  ['Materials', ['wood', 'stone', 'scrap', 'metal', 'cloth', 'hide', 'leather', 'bone', 'herbs', 'seeds', 'rope', 'fuel']],
+  ['Ammo', ['ammo', 'bolts']]
+];
 export function openInventory() {
   const inv = G.save.inv;
-  const cards = Object.entries(ITEMS).map(([k, ic]) => `<div class="item"><div class="ic">${icon(ic)}</div><div class="n">${inv[k] || 0}</div><div class="l">${k}</div>
-    ${USE[k] ? `<button class="small" data-use="${k}" ${inv[k] ? '' : 'disabled'}>${USE[k].label}</button>` : ''}</div>`).join('');
+  const card = k => { const it = ITEMS[k]; return `<div class="item"><div class="ic">${icon(it.icon)}</div><div class="n">${inv[k] || 0}</div><div class="l">${it.name}</div>
+    ${it.use ? `<button class="small" data-use="${k}" ${inv[k] ? '' : 'disabled'}>${it.use.label}</button>` : ''}</div>`; };
+  const groups = GROUPS.map(([title, keys]) => { const have = keys.filter(k => inv[k] > 0 || ['food', 'water'].includes(k)); return have.length ? `<h3>${title}</h3><div class="items">${have.map(card).join('')}</div>` : ''; }).join('');
+  const eq = (label, ic, list, cur, table, kind) => `<div class="row"><span>${icon(ic)} ${label}</span><span>${[...new Set([...(list || []), cur].filter(Boolean))].map(k =>
+    `<button class="small ${k === cur ? 'primary' : ''}" data-eq="${kind}:${k}">${(table[k] || {}).name || k}</button>`).join(' ') || '—'}</span></div>`;
   showModal(`<div class="panel"><h2>Backpack</h2>
-    <div class="row"><span>${icon('bat')} Melee</span><b>${inv.melee}</b></div>
-    <div class="row"><span>${icon('gun')} Gun</span><b>${inv.gun || '—'}</b></div>
-    <div class="items">${cards}</div>
+    <h3>Equipped</h3>
+    ${eq('Melee', 'bat', inv.ownedMelee, inv.melee, MELEE, 'melee')}
+    ${eq('Ranged', 'gun', inv.ownedGuns, inv.gun, GUNS, 'gun')}
+    ${eq('Armour', 'shield', inv.ownedArmor, inv.armor, ARMOR, 'armor')}
+    ${groups}
     ${G.extraInventory ? G.extraInventory() : ''}
-    <button class="primary" id="inv-close">Close</button></div>`);
+    <button class="primary" id="inv-close">Close</button> <button id="inv-craft">Crafting</button></div>`);
   document.querySelectorAll('[data-use]').forEach(b => b.onclick = () => {
     const k = b.dataset.use; if (!inv[k]) return;
-    inv[k]--; USE[k].fx(G.save.stats); toast(USE[k].msg); openInventory();
+    inv[k]--; ITEMS[k].use.fx(G.save.stats); toast(`${ITEMS[k].name}: <b>${ITEMS[k].use.msg}</b>`); G.sfx?.pickup(); openInventory();
   });
+  document.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { const [kind, k] = b.dataset.eq.split(':'); inv[kind] = k; openInventory(); });
   $('inv-close').onclick = closeModal;
+  $('inv-craft').onclick = () => G.openCrafting?.();
 }
 
 /* ---------- Map ---------- */

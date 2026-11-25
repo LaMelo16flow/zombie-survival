@@ -1,5 +1,5 @@
 // The one shared game state. Everything that must be saved lives in G.save.
-export const VERSION = '0.12';
+export const VERSION = '0.13';
 
 export const G = {
   scene: null, camera: null, renderer: null,
@@ -19,7 +19,7 @@ export function newSave(name = 'Survivor') {
     created: new Date().toISOString(),
     player: { name, x: 0, z: 0, rot: 0 },
     stats: { hp: 100, maxHp: 100, hunger: 90, thirst: 90, stamina: 100, kills: 0 },
-    inv: { melee: 'bat', gun: null, ammo: 0, food: 1, water: 1, meds: 0, wood: 0, scrap: 0, fuel: 0 },
+    inv: { melee: 'bat', gun: null, armor: 'none', ammo: 0, bolts: 0, food: 1, water: 1, meds: 0, wood: 0, scrap: 0, fuel: 0, ownedMelee: ['bat'], ownedGuns: [], ownedArmor: [] },
     world: { day: 1, hour: 8, mods: {}, discovered: [], looted: {} },
     factions: { rep: { haven: 10, wolves: -10, order: 0 }, allies: [], destroyed: [], leadersKilled: [], player: null },
     builds: [],
