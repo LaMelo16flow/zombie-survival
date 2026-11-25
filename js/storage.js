@@ -26,14 +26,14 @@ export const upgrade = data => { const s = merge(newSave(), data); s.version = V
 export function saveLocal() {
   if (!G.save || G.dead) return;
   G.save.saved = new Date().toISOString();
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(G.save));
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(G.save)); } catch {}
 }
 export function loadLocal() { try { const s = localStorage.getItem(LOCAL_KEY); return s ? upgrade(JSON.parse(s)) : null; } catch { return null; } }
-export function clearLocal() { localStorage.removeItem(LOCAL_KEY); }
+export function clearLocal() { try { localStorage.removeItem(LOCAL_KEY); } catch {} }
 
 // Loading needs a fresh world, so we park the save and reload the page.
-export function bootWith(save) { sessionStorage.setItem('deadground.boot', JSON.stringify(save)); location.reload(); }
-export function takeBootSave() { const s = sessionStorage.getItem('deadground.boot'); sessionStorage.removeItem('deadground.boot'); return s ? upgrade(JSON.parse(s)) : null; }
+export function bootWith(save) { try { sessionStorage.setItem('deadground.boot', JSON.stringify(save)); } catch {} location.reload(); }
+export function takeBootSave() { try { const s = sessionStorage.getItem('deadground.boot'); sessionStorage.removeItem('deadground.boot'); return s ? upgrade(JSON.parse(s)) : null; } catch { return null; } }
 
 /* ---------- GitHub ---------- */
 export function getCfg() {
@@ -45,7 +45,7 @@ export function getCfg() {
   }
   return { branch: 'main', slot: 'slot1', ...c };
 }
-const setCfg = c => localStorage.setItem(CFG_KEY, JSON.stringify(c));
+const setCfg = c => { try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch {} };
 export const ghReady = () => { const c = getCfg(); return !!(c.owner && c.repo && c.token); };
 
 async function gh(path, opts = {}) {
