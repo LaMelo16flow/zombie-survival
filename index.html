@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#15121c">
+<meta name="theme-color" content="#0b141b">
 <title>Dead Ground — Zombie Survival</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -19,7 +19,8 @@
 <div id="hud" class="hidden">
   <div id="status"><div id="portrait"><div class="ring"></div><span id="initial">S</span><em id="lvl">1</em><div id="xp"><i id="xpfill"></i></div></div><div id="bars"></div></div>
   <div id="clock"></div>
-  <canvas id="minimap" width="236" height="236"></canvas>
+  <canvas id="minimap" width="240" height="240"></canvas>
+  <button id="hubbtn" aria-label="Open the hub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h7v7H4zm9 0h7v7h-7zM4 13h7v7H4zm9 0h7v7h-7z"/></svg><em></em></button>
   <div id="banner"><div class="small" id="banner-small"></div><div class="big" id="banner-big"></div><div class="line"></div></div>
   <div id="toast"></div>
   <div id="prompt"></div>
@@ -37,14 +38,14 @@
 
 <!-- Title screen -->
 <div id="title" class="screen">
-  <div class="logo"><h1>DEAD<br>GROUND</h1><div class="kana">デッド・グラウンド</div></div>
-  <div class="sub">Survive · Choose · Lead</div>
+  <div class="logo"><h1>Dead<br>Ground<span>.</span></h1></div>
+  <p class="sub">An open world after the end. Survive, build a faction, and decide what kind of world comes next.</p>
   <div class="menu">
     <div id="title-extra"></div>
     <button id="btn-new">New game</button>
   </div>
-  <p class="help">PC: WASD move · mouse look (click) · Shift sprint · F hit · R shoot · E use<br>
-  iPhone: left thumb moves · right thumb looks · push the stick far to sprint</p>
+  <p class="help">On a computer: WASD to move, click and use the mouse to look, Shift to sprint, F to hit, R to shoot, E to use, H for the hub.<br>
+  On iPhone: left thumb moves, right thumb looks, push the stick to the edge to sprint.</p>
   <p class="ver" id="ver"></p>
 </div>
 

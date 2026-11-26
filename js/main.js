@@ -1,6 +1,6 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G, VERSION, newSave } from './state.js';
-import { initInput, endFrame, input } from './input.js';
+import { initInput, endFrame, input, trigger } from './input.js';
 import { buildTerrain, buildForest, waterUniforms, G_grass } from './world.js';
 import { settings, initSettings, trackFrame, openGameSettings } from './settings.js';
 import { tutorialSystem } from './tutorial.js';
@@ -106,7 +106,7 @@ function loop(now) {
 initRenderer();
 initInput(canvas);
 buildWorld();
-G.grassMeshes = G_grass; G.settings = settings; G.openGameSettings = openGameSettings;
+G.grassMeshes = G_grass; G.trigger = trigger; G.settings = settings; G.openGameSettings = openGameSettings;
 initSettings();
 G.camera.position.set(30, 40, 30); G.camera.lookAt(0, 0, 0);
 document.getElementById('btn-new').onclick = () => openCreator(({ name, look, perk }) => {
@@ -120,6 +120,7 @@ const btn = (label, fn, cls = '') => { const b = document.createElement('button'
 if (local) btn(`Continue (day ${local.world.day})`, () => startGame(local), 'primary');
 btn('Load from GitHub', () => openLoadList());
 btn('GitHub storage', () => openSettings());
+if (!local) document.getElementById('title').classList.add('fresh');
 const boot = takeBootSave();
 if (boot) startGame(boot);
 requestAnimationFrame(loop);

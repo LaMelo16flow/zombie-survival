@@ -7,7 +7,7 @@ import { spawnZombie } from './zombies.js';
 import { spawnNPC, removeNPC, npcs, randomName } from './npc.js';
 import { addInteractable, removeInteractable } from './interact.js';
 import { heightAt } from './world.js';
-import { toast, showChoice, showModal, closeModal, esc } from './ui.js';
+import { toast, showChoice, showModal, showHub, closeModal, esc } from './ui.js';
 import { sfx } from './audio.js';
 
 /*
@@ -179,7 +179,7 @@ export function openMissions() {
   const s = M();
   const rows = s.active.map(m => `<div class="row"><span><b>${m.title}</b>${m.chain ? ` <small style="color:${FACTIONS[m.chain].css}">${FACTIONS[m.chain].name}</small>` : ''}<br><small style="opacity:.8">${objectiveText(m)}</small></span>
     <button class="small ${m.id === s.tracked ? 'primary' : ''}" data-tr="${m.id}">${m.id === s.tracked ? 'Tracking' : 'Track'}</button></div>`).join('') || '<p style="opacity:.7">No missions. Talk to faction leaders, or ask survivors if they need help.</p>';
-  showModal(`<div class="panel"><h2>Missions</h2>${rows}<p style="font-size:12px;opacity:.6">Done: ${s.done.length}</p><button class="primary" id="ms-close">Close</button> <button id="ms-journal">Journal</button></div>`);
+  showHub('missions', `<div class="panel"><h2>Missions</h2>${rows}<p style="font-size:12px;opacity:.6">Done: ${s.done.length}</p><button class="primary" id="ms-close">Close</button> <button id="ms-journal">Journal</button></div>`);
   document.querySelectorAll('[data-tr]').forEach(b => b.onclick = () => { s.tracked = b.dataset.tr; openMissions(); });
   document.getElementById('ms-close').onclick = closeModal;
   document.getElementById('ms-journal').onclick = () => G.openJournal?.();
@@ -189,6 +189,7 @@ let checkT = 0;
 export const missionSystem = {
   init() {
     M();
+    G.openMissions = openMissions;
     G.missions = { leaderChoice, wandererChoice, tracked: trackedMission, objectiveText };
     beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 120, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0xffc94a, transparent: true, opacity: 0.35, depthWrite: false, fog: false, side: THREE.DoubleSide }));
     beacon.visible = false; G.scene.add(beacon);

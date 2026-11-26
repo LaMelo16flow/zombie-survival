@@ -30,7 +30,17 @@ const PATHS = {
   cloth: 'M4 5c3 2 5 2 8 0s5-2 8 0v14c-3-2-5-2-8 0s-5 2-8 0z',
   leather: 'M6 3h12l2 5-3 13H7L4 8zm3 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
   bone: 'M7 3a2.5 2.5 0 0 1 2.3 3.5l8.2 8.2A2.5 2.5 0 1 1 21 17a2.5 2.5 0 1 1-3.5 3.3l-8.2-8.2A2.5 2.5 0 1 1 6 7.5 2.5 2.5 0 0 1 7 3z',
-  shield: 'M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z'
+  shield: 'M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z',
+  bag: 'M8 7V6a4 4 0 0 1 8 0v1h3l1 14H4L5 7zm2 0h4V6a2 2 0 0 0-4 0z',
+  hammer: 'M14 3l7 7-3 3-2-2-9.5 9.5-2.8-2.8L13.2 8.2l-2-2z',
+  home: 'M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z',
+  map: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zm6-1v13l6 3V8z',
+  target: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
+  users: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM1 20c0-4 4-6 8-6s8 2 8 6zm16-5c3 0 6 1.5 6 5h-4c0-2-1-3.6-2-5z',
+  star: 'M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21l1.4-7L2 9.3l7-.8z',
+  book: 'M4 4c3-1 6-1 8 1 2-2 5-2 8-1v15c-3-1-6-1-8 1-2-2-5-2-8-1z',
+  gear: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9.4 5.5-2-.3-.6 1.5 1.2 1.7-2 2-1.7-1.2-1.5.6-.3 2h-3l-.3-2-1.5-.6-1.7 1.2-2-2 1.2-1.7-.6-1.5-2-.3v-3l2-.3.6-1.5L4.4 6.6l2-2 1.7 1.2 1.5-.6.3-2h3l.3 2 1.5.6 1.7-1.2 2 2-1.2 1.7.6 1.5 2 .3z',
+  x: 'M6 4.6 12 10.6l6-6L19.4 6l-6 6 6 6-1.4 1.4-6-6-6 6L4.6 18l6-6-6-6z'
 };
 export const icon = n => `<svg class="i" viewBox="0 0 24 24"><path d="${PATHS[n] || PATHS.scrap}"/></svg>`;
 
@@ -65,19 +75,18 @@ function updateDamageNumbers(dt) {
 }
 
 /* ---------- Status bars ---------- */
-const BARS = [
-  ['hp', 'HP', 'var(--red)', 'heart'], ['hunger', 'FOOD', 'var(--gold)', 'food'], ['thirst', 'WATER', 'var(--blue)', 'water'], ['stamina', 'STAMINA', 'var(--green)', 'bolt']
-];
-const barEls = {};
+// Health is the ring around your portrait; food, water and stamina are small rings beside it.
+const GAUGES = [['hunger', 'Food', 'var(--food)', 'food'], ['thirst', 'Water', 'var(--water)', 'water'], ['stamina', 'Stamina', 'var(--stam)', 'bolt']];
+const gEls = {};
 export function initHUD() {
   const wrap = $('bars'); wrap.innerHTML = '';
-  for (const [k, label, color, ic] of BARS) {
-    const b = document.createElement('div'); b.className = 'bar';
-    b.innerHTML = `<b></b><i style="background:${color}"></i><span>${icon(ic)}${label}</span>`;
-    wrap.appendChild(b); barEls[k] = { el: b, fill: b.children[1], trail: b.children[0] };
+  for (const [k, label, color, ic] of GAUGES) {
+    const g = document.createElement('div'); g.className = 'gauge'; g.title = label; g.style.setProperty('--c', color);
+    g.innerHTML = icon(ic); wrap.appendChild(g); gEls[k] = g;
   }
   $('initial').textContent = (G.save.player.name || 'S')[0].toUpperCase();
-  banner('Pine Hollow Outskirts', 'DAY ' + G.save.world.day);
+  $('hubbtn').onclick = () => openHub();
+  banner('Pine Hollow Outskirts', 'Day ' + G.save.world.day);
 }
 
 export function showDeath(cause) {
@@ -91,20 +100,38 @@ export function showDeath(cause) {
   $('d-load').onclick = () => location.reload();   // title screen offers Continue from the last autosave
 }
 
-export function showModal(html) { const m = $('modal'); m.innerHTML = html; m.classList.remove('hidden'); G.paused = true; document.exitPointerLock?.(); }
+export function showModal(html, cls = '') { const m = $('modal'); m.className = 'screen ' + cls; m.innerHTML = html; G.paused = true; document.exitPointerLock?.(); }
+
+/* ---------- The Hub: every menu in one place ---------- */
+const HUB = [
+  ['bag', 'Backpack', 'bag', () => openInventory()], ['craft', 'Crafting', 'hammer', () => G.openCrafting?.()],
+  ['build', 'Build', 'home', () => { closeModal(); G.trigger?.('build'); }], ['map', 'Map', 'map', () => openMap()],
+  ['missions', 'Missions', 'target', () => G.openMissions?.()], ['crew', 'Faction', 'users', () => G.openFactionMenu?.()],
+  ['skills', 'Skills', 'star', () => G.openSkills?.()], ['journal', 'Journal', 'book', () => G.openJournal?.()],
+  ['system', 'Save & settings', 'gear', () => G.openPause?.()]
+];
+let hubTab = 'bag';
+export function showHub(tab, html) {
+  hubTab = tab;
+  const rail = HUB.map(([id, label, ic]) => `<button data-hub="${id}" class="${id === tab ? 'on' : ''}">${icon(ic)}<span>${label}</span></button>`).join('');
+  showModal(`<div class="hub"><nav class="rail">${rail}<button class="close" data-hub="close">${icon('x')}<span>Close</span></button></nav>${html}</div>`);
+  document.querySelectorAll('[data-hub]').forEach(b => b.onclick = () => { const id = b.dataset.hub; if (id === 'close') return closeModal(); HUB.find(h => h[0] === id)[3](); });
+}
+export function openHub(tab = hubTab) { (HUB.find(h => h[0] === tab) || HUB[0])[3](); }
 export function closeModal() { $('modal').classList.add('hidden'); G.paused = false; }
 
 let mmT = 0;
 export function updateHUD(dt) {
-  if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) { $('toast').style.opacity = 0; $('toast').style.transform = 'translateX(-50%) translateY(-10px) skewX(-8deg)'; } }
+  if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) { $('toast').style.opacity = 0; $('toast').style.transform = 'translate(-50%, -8px)'; } }
   if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0) $('banner').classList.remove('on'); }
   const st = G.save.stats;
-  for (const [k] of BARS) {
-    const f = Math.max(0, st[k] / (k === 'hp' ? st.maxHp : 100));
-    const e = barEls[k]; e.fill.style.transform = e.trail.style.transform = `scaleX(${f})`;
-    e.el.classList.toggle('low', f < 0.2);
+  for (const [k] of GAUGES) {
+    const f = Math.max(0, Math.min(1, st[k] / 100)), g = gEls[k];
+    g.style.setProperty('--v', (f * 100) + '%'); g.classList.toggle('low', f < 0.2); if (k === 'stamina') g.classList.toggle('full', f > 0.99);
   }
-  $('portrait').style.setProperty('--hp', (st.hp / st.maxHp * 100) + '%');
+  $('portrait').style.setProperty('--hp-p', (st.hp / st.maxHp * 100) + '%');
+  $('portrait').classList.toggle('low', st.hp / st.maxHp < 0.25);
+  $('hubbtn').classList.toggle('alert', !!st.points);
   $('lvl').textContent = (st.points ? '+' : '') + (st.level || 1); $('lvl').classList.toggle('pts', !!st.points);
   $('xpfill').style.width = ((st.xp || 0) / Math.round(100 * Math.pow(st.level || 1, 1.35)) * 100) + '%';
   const inv = G.save.inv;
@@ -181,7 +208,7 @@ export function openInventory() {
   const groups = GROUPS.map(([title, keys]) => { const have = keys.filter(k => inv[k] > 0 || ['food', 'water'].includes(k)); return have.length ? `<h3>${title}</h3><div class="items">${have.map(card).join('')}</div>` : ''; }).join('');
   const eq = (label, ic, list, cur, table, kind) => `<div class="row"><span>${icon(ic)} ${label}</span><span>${[...new Set([...(list || []), cur].filter(Boolean))].map(k =>
     `<button class="small ${k === cur ? 'primary' : ''}" data-eq="${kind}:${k}">${(table[k] || {}).name || k}</button>`).join(' ') || '—'}</span></div>`;
-  showModal(`<div class="panel"><h2>Backpack</h2>
+  showHub('bag', `<div class="panel"><h2>Backpack</h2>
     <h3>Equipped</h3>
     ${eq('Melee', 'bat', inv.ownedMelee, inv.melee, MELEE, 'melee')}
     ${eq('Ranged', 'gun', inv.ownedGuns, inv.gun, GUNS, 'gun')}
@@ -200,9 +227,9 @@ export function openInventory() {
 
 /* ---------- Map ---------- */
 export function openMap() {
-  const size = Math.max(200, Math.min(innerWidth - 80, innerHeight - 190));
-  showModal(`<div class="panel" style="max-width:${size + 40}px"><h2>Map</h2>
-    <canvas id="mapc" width="${size}" height="${size}" style="width:100%;border-radius:12px;background:#2a3b33;border:3px solid #15121c"></canvas>
+  const wide = innerWidth > 760 && innerHeight > 500, size = Math.max(200, Math.min(innerWidth - (wide ? 330 : 70), innerHeight - (wide ? 160 : 230)));
+  showHub('map', `<div class="panel"><h2>Map</h2>
+    <canvas id="mapc" width="${size}" height="${size}" style="display:block;margin:0 auto;width:min(100%, ${size}px);aspect-ratio:1;border-radius:16px;background:#2a3b33;border:1px solid rgba(255,255,255,.2)"></canvas>
     <p style="font-size:12px;opacity:.7">Only places you have found are named. ${G.mapLegend ? G.mapLegend() : ''}</p>
     <button class="primary" id="map-close">Close</button></div>`);
   const c = $('mapc').getContext('2d'), k = size / WORLD_SIZE, toM = v => (v + WORLD_SIZE / 2) * k;
@@ -223,12 +250,13 @@ export function openMap() {
 export const uiSystem = {
   init() { addTouchButton('BAG', 'inventory', true); addTouchButton('MAP', 'map', true); },
   update() {
+    if (pressed('hub')) openHub();
     if (pressed('inventory')) openInventory();
     if (pressed('map')) openMap();
   }
 };
 // Close windows with the same key
-addEventListener('keydown', e => { if (G.paused && !document.querySelector('#modal input:focus') && ['KeyI', 'KeyM', 'Escape'].includes(e.code) && !G.dead && !G.lockModal) closeModal(); });
+addEventListener('keydown', e => { if (G.paused && !document.querySelector('#modal input:focus') && ['KeyI', 'KeyM', 'KeyH', 'KeyC', 'KeyO', 'KeyJ', 'KeyK', 'Escape'].includes(e.code) && !G.dead && !G.lockModal) closeModal(); });
 
 /* ---------- Choice dialog (used by factions and story) ---------- */
 // choices: [{ label, fn, disabled?, note? }]
@@ -236,7 +264,7 @@ export function showChoice(title, text, choices, { lock = false } = {}) {
   G.lockModal = lock;
   showModal(`<div class="panel"><h2>${title}</h2><p>${text}</p><div class="choices">
     ${choices.map((c, i) => `<button data-c="${i}" ${c.disabled ? 'disabled' : ''}><span class="k">${i + 1}</span><span>${c.label}${c.note ? `<small>${c.note}</small>` : ''}</span></button>`).join('')}
-    </div></div>`);
+    </div></div>`, 'dialog');
   G.sfx?.ui();
   document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => {
     const c = choices[+b.dataset.c]; if (c.disabled) return; G.sfx?.ui();

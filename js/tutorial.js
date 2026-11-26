@@ -12,11 +12,11 @@ const STEPS = [
   { id: 'look', text: T ? 'Drag on the <b>right side</b> of the screen to look around.' : '<b>Click</b> the game, then move the mouse to look around.', done: () => Math.abs(input.lookX) > 2 },
   { id: 'loot', text: 'Walk up to crates, cupboards and fridges and press ' + (T ? '<b>USE</b>' : '<b>E</b>') + ' to search them.', ev: 'looted' },
   { id: 'fight', text: 'Zombies! Hit them with ' + (T ? '<b>HIT</b>' : '<b>F</b> or left click') + '. You turn to the closest one automatically.', ev: 'zombieKilled' },
-  { id: 'bag', text: 'Open your ' + (T ? '<b>BAG</b>' : 'backpack with <b>I</b>') + ' to eat, drink and heal. Keep FOOD and WATER up!', ev: 'bagOpened' },
+  { id: 'bag', text: 'Open your backpack ' + (T ? 'from the <b>hub</b> (grid button, top right)' : 'with <b>I</b>, or the hub with <b>H</b>') + ' to eat, drink and heal. Keep the food and water rings full.', ev: 'bagOpened' },
   { id: 'gather', text: 'Chop trees and break rocks (' + (T ? 'USE' : 'E') + ') to get wood and stone.', ev: 'gathered' },
-  { id: 'craft', text: 'Open ' + (T ? '<b>CRAFT</b>' : 'crafting with <b>C</b>') + ' to make bandages, weapons and more.', ev: 'crafted' },
-  { id: 'build', text: 'Press ' + (T ? '<b>BUILD</b>' : '<b>B</b>') + ' to build a campfire, walls and a workbench.', ev: 'built' },
-  { id: 'crew', text: 'Found your own faction with ' + (T ? '<b>MORE → CREW</b>' : '<b>Q</b>') + ' and invite survivors to join you.', ev: 'factionCreated' },
+  { id: 'craft', text: 'Open crafting ' + (T ? 'in the <b>hub</b>' : 'with <b>C</b>') + ' to make bandages, weapons and more.', ev: 'crafted' },
+  { id: 'build', text: (T ? 'Tap <b>Build</b> in the hub' : 'Press <b>B</b>') + ' to build a campfire, walls and a workbench.', ev: 'built' },
+  { id: 'crew', text: 'Found your own faction ' + (T ? 'in the hub under <b>Faction</b>' : 'with <b>Q</b>') + ' and invite survivors to join you.', ev: 'factionCreated' },
   { id: 'quest', text: 'Talk to faction leaders for missions. Your tracked mission shows as a <b>gold beacon</b>.', ev: 'missionStarted' }
 ];
 let el, cur = null, shownT = 0;

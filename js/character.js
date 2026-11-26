@@ -3,7 +3,7 @@ import { G } from './state.js';
 import { makeHuman, giveWeapon, animateHuman, HAIR_STYLES, HAIR_COLORS } from './characters.js';
 import { heightAt } from './world.js';
 import { pressed, addTouchButton } from './input.js';
-import { toast, showModal, closeModal, esc } from './ui.js';
+import { toast, showModal, showHub, closeModal, esc } from './ui.js';
 import { sfx } from './audio.js';
 
 /*
@@ -69,7 +69,7 @@ export function openSkills() {
     `<div class="row"><span><b>${s.name}</b> ${'●'.repeat(sk[id] || 0)}${'○'.repeat(MAX_RANK - (sk[id] || 0))}<br><small style="opacity:.75">${s.desc}</small></span>
       <button class="small ${x.points && (sk[id] || 0) < MAX_RANK ? 'primary' : ''}" data-sk="${id}" ${x.points && (sk[id] || 0) < MAX_RANK ? '' : 'disabled'}>+1</button></div>`).join('')).join('');
   const perk = PERKS[G.save.player.perk];
-  showModal(`<div class="panel"><h2>${esc(G.save.player.name)} — level ${x.level}</h2>
+  showHub('skills', `<div class="panel"><h2>${esc(G.save.player.name)} — level ${x.level}</h2>
     <p>${perk ? `<b>${perk.name}:</b> ${perk.desc}<br>` : ''}XP ${x.xp} / ${x.need} · <b style="color:var(--gold)">${x.points} skill point${x.points === 1 ? '' : 's'}</b></p>
     <div class="xpbar"><i style="width:${x.xp / x.need * 100}%"></i></div>
     ${branches}
@@ -129,7 +129,7 @@ export function animatePreview(dt) { if (preview) { animateHuman(preview, dt, 0)
 export const characterSystem = {
   init() {
     G.save.skills = G.save.skills || {};
-    G.skillMul = skillMul; G.addXP = addXP;
+    G.skillMul = skillMul; G.addXP = addXP; G.openSkills = openSkills;
     applyMaxHp();
     addTouchButton('SKILLS', 'skills', true);
     G.on('zombieKilled', zb => addXP(zb.bossId ? 500 : zb.k.scale ? 25 : 10));

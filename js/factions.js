@@ -5,7 +5,7 @@ import { LOCATIONS } from './locations.js';
 import { addInteractable, removeInteractable } from './interact.js';
 import { spawnNPC, removeNPC, npcs, randomName } from './npc.js';
 import { heightAt, addCircle } from './world.js';
-import { toast, showChoice, showModal, closeModal, esc } from './ui.js';
+import { toast, showChoice, showModal, showHub, closeModal, esc } from './ui.js';
 import { toon } from './style.js';
 
 export const FACTIONS = {
@@ -172,7 +172,7 @@ export function openFactionMenu() {
   const rows = mem.map(n => `<div class="row"><span>${esc(n.name)} · ${n.weapon} · ❤ ${n.hp | 0}</span>
     <button class="small" data-m="${n.data.id}">${n.mode === 'follow' ? 'Following' : 'Guarding'}</button></div>`).join('') || '<p style="opacity:.6">No members yet. Talk to survivors you meet.</p>';
   const reps = Object.entries(FACTIONS).map(([f, F]) => `<div class="row"><span style="color:${F.css}">${F.name}</span><span>${fs.rep[f]} · ${relation(f)}</span></div>`).join('');
-  showModal(`<div class="panel"><h2 style="color:${mine.color}">${esc(mine.name)}</h2>
+  showHub('crew', `<div class="panel"><h2 style="color:${mine.color}">${esc(mine.name)}</h2>
     <p>${IDEOLOGIES[mine.ideology].label} · Founded day ${mine.founded}<br>Base: ${base ? base.name : 'none — stand in an empty place you found and claim it'}</p>
     <h3>Members (${mem.length}/${maxMembers()})</h3>${rows}
     <h3>Other factions</h3>${reps}
@@ -241,7 +241,7 @@ function manageBase(L) {
 export const factionSystem = {
   init() {
     const fs = G.save.factions;
-    G.relation = relation;
+    G.relation = relation; G.openFactionMenu = openFactionMenu;
     G.npcList = () => npcs;
     for (const f of Object.keys(FACTIONS)) spawnCamp(f);
     // survivors scattered around the world

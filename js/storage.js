@@ -1,6 +1,6 @@
 import { G, newSave, VERSION } from './state.js';
 import { pressed, addTouchButton } from './input.js';
-import { toast, showModal, closeModal, esc } from './ui.js';
+import { toast, showModal, showHub, closeModal, esc } from './ui.js';
 import { audioPrefs, savePrefs } from './audio.js';
 
 /*
@@ -147,7 +147,7 @@ function openSaveGitHub() {
 
 export function openPause() {
   const c = getCfg();
-  showModal(`<div class="panel center"><h2>Paused</h2>
+  showHub('system', `<div class="panel"><h2>Save & settings</h2>
     <p style="font-size:13px;opacity:.7">Day ${G.save.world.day} · GitHub: ${ghReady() ? `${esc(c.owner)}/${esc(c.repo)}` : 'not set up'}</p>
     <div class="choices">
       <button class="primary" id="p-resume">Resume</button>
@@ -174,7 +174,7 @@ export function openPause() {
 
 let autoT = 30;
 export const storageSystem = {
-  init() { addTouchButton('MENU', 'menu', true); },
+  init() { addTouchButton('MENU', 'menu', true); G.openPause = openPause; },
   update(dt) {
     if (pressed('menu')) openPause();
     autoT -= dt; if (autoT <= 0) { autoT = 30; saveLocal(); }

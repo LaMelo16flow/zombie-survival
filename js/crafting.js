@@ -1,7 +1,7 @@
 import { G } from './state.js';
 import { pressed, addTouchButton } from './input.js';
 import { ITEMS, MELEE, GUNS, ARMOR } from './items.js';
-import { toast, showModal, closeModal, icon } from './ui.js';
+import { toast, showModal, showHub, closeModal, icon } from './ui.js';
 import { sfx } from './audio.js';
 
 /*
@@ -70,7 +70,7 @@ export function openCrafting(focus) {
     return `<div class="row"><span><b>${r.name}</b><br><small style="opacity:.75">${needs}${r.station ? ` · <span style="color:${okStation ? '#7ad35a' : '#ff8a8a'}">${STATION_NAME[r.station]}${okStation ? ' ✓' : ' needed'}</span>` : ''}</small></span>
       <button class="small ${okStation && okMat ? 'primary' : ''}" data-r="${RECIPES.indexOf(r)}" ${okStation && okMat ? '' : 'disabled'}>Craft</button></div>`;
   }).join('') || '<p style="opacity:.7">Nothing new to craft here — you own everything in this list.</p>';
-  showModal(`<div class="panel"><h2>Crafting</h2>
+  showHub('craft', `<div class="panel"><h2>Crafting</h2>
     <div class="tabs">${CATS.map(c => `<button class="small ${c === tab ? 'on' : ''}" data-t="${c}">${c}</button>`).join('')}</div>
     ${rows}
     <p style="font-size:12px;opacity:.65">Stations nearby: ${['bench', 'fire', 'forge', 'tanning', 'smoke'].filter(s => stationNear(s)).map(s => STATION_NAME[s]).join(', ') || 'none — build them with B'}</p>

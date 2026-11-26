@@ -3,7 +3,7 @@ import { pressed, addTouchButton } from './input.js';
 import { LOCATIONS } from './locations.js';
 import { FACTIONS, relation, changeRep, karma, destroyFaction, spawnRaiders, addSpecialMember, members } from './factions.js';
 import { spawnGroup } from './zombies.js';
-import { toast, showChoice, showModal, closeModal, esc } from './ui.js';
+import { toast, showChoice, showModal, showHub, closeModal, esc } from './ui.js';
 
 /*
   THE STORY — every event is a decision. Choices set flags, change reputations,
@@ -210,7 +210,7 @@ function chapter() { return S().done.lastSignal ? 4 : (S().done.lab || has('cabl
 export function openJournal() {
   const L = S().log.slice().reverse().map(e => `<div class="row"><span>Day ${e.day}</span><span style="text-align:right;max-width:75%">${e.text}</span></div>`).join('') || '<p>Nothing yet.</p>';
   const tm = G.missions?.tracked();
-  showModal(`<div class="panel"><h2>Journal — Chapter ${chapter()}: ${CHAPTERS[chapter()]}</h2>${tm ? `<h3>Tracked mission</h3><p><b>${tm.title}</b> — ${G.missions.objectiveText(tm)}</p>` : ''}<h3>Goals</h3><ul>${hints().map(x => `<li>${x}</li>`).join('') || '<li>Survive.</li>'}</ul>
+  showHub('journal', `<div class="panel"><h2>Journal — Chapter ${chapter()}: ${CHAPTERS[chapter()]}</h2>${tm ? `<h3>Tracked mission</h3><p><b>${tm.title}</b> — ${G.missions.objectiveText(tm)}</p>` : ''}<h3>Goals</h3><ul>${hints().map(x => `<li>${x}</li>`).join('') || '<li>Survive.</li>'}</ul>
     <h3>Your decisions</h3>${L}<p style="opacity:.6;font-size:12px">Endings found: ${S().endings.join(', ') || 'none yet'}</p>
     <button class="primary" id="j-close">Close</button></div>`);
   document.getElementById('j-close').onclick = closeModal;

@@ -1,5 +1,5 @@
 import { G } from './state.js';
-import { showModal, closeModal } from './ui.js';
+import { showModal, showHub, closeModal } from './ui.js';
 import { isTouch } from './input.js';
 
 /*
@@ -50,7 +50,7 @@ function fpsCounter() {
 
 export function openGameSettings(back) {
   const opt = (k, v, label) => `<button class="small ${settings[k] === v ? 'on' : ''}" data-set="${k}" data-v='${JSON.stringify(v)}'>${label}</button>`;
-  showModal(`<div class="panel"><h2>Settings</h2>
+  showHub('system', `<div class="panel"><h2>Settings</h2>
     <h3>Graphics</h3><div class="tabs">${opt('quality', 'auto', 'Auto')}${opt('quality', 'low', 'Low')}${opt('quality', 'medium', 'Medium')}${opt('quality', 'high', 'High')}</div>
     <p style="font-size:12px;opacity:.7">Now running: ${level}. Low turns off shadows and grass for older phones.</p>
     <h3>Ink outlines</h3><div class="tabs">${opt('outlines', true, 'On')}${opt('outlines', false, 'Off (faster)')}</div>

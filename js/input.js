@@ -10,7 +10,7 @@ const KEYMAP = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   ShiftLeft: 'sprint', ShiftRight: 'sprint', KeyE: 'interact', KeyF: 'attack', Space: 'attack', KeyR: 'shoot',
   KeyB: 'build', KeyM: 'map', KeyQ: 'faction', KeyJ: 'journal', KeyI: 'inventory', Escape: 'menu', KeyP: 'menu',
-  Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', Digit4: 'slot4', Digit5: 'slot5', Digit6: 'slot6', Digit7: 'slot7', Digit8: 'slot8', Digit9: 'slot9', KeyC: 'craft', KeyZ: 'nextcat', KeyK: 'skills', KeyO: 'missions',
+  Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', Digit4: 'slot4', Digit5: 'slot5', Digit6: 'slot6', Digit7: 'slot7', Digit8: 'slot8', Digit9: 'slot9', KeyC: 'craft', KeyZ: 'nextcat', KeyK: 'skills', KeyO: 'missions', KeyH: 'hub', Tab: 'hub',
   KeyG: 'command', KeyT: 'rotate', KeyX: 'demolish'
 };
 
@@ -89,22 +89,21 @@ function initTouch() {
 }
 
 // Add an on-screen button (touch only). action = name used with pressed()/down().
-const PRIMARY = ['inventory', 'map', 'craft', 'build', 'missions'];   // always shown; the rest are under MORE
+// Big thumb buttons get icons; everything else lives in the Hub (top-right grid button).
+const BIG_ICON = {
+  attack: 'M14.5 3l6.5 6.5-2 2-1.5-1.5-8.4 8.4 1.4 1.4-2 2L5 18.3l-2 2L1.7 19l2-2-1.5-3.5 2-2 1.4 1.4L14 4.5 12.5 3z',
+  shoot: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 2.1V7h-2V4.1A8 8 0 0 0 4.1 11H7v2H4.1a8 8 0 0 0 6.9 6.9V17h2v2.9a8 8 0 0 0 6.9-6.9H17v-2h2.9A8 8 0 0 0 13 4.1z',
+  interact: 'M9 11V5a2 2 0 0 1 4 0v5h1V7a2 2 0 0 1 4 0v8a7 7 0 0 1-7 7c-3 0-5-1.6-6.4-4L2 12.6a1.8 1.8 0 0 1 3-1.8l2 2.6V11z'
+};
+const BIG_LABEL = { attack: '', shoot: 'Shoot', interact: 'Use' };
+export function trigger(action) { press(action); setTimeout(() => release(action), 60); }
 export function addTouchButton(label, action, small = false) {
-  if (!isTouch) return;
+  if (!isTouch || small) return null;
   const b = document.createElement('div');
-  b.className = small ? 'tb sm' : 'tb'; b.textContent = label;
+  b.className = 'tb'; b.dataset.a = action;
+  b.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="${BIG_ICON[action] || BIG_ICON.interact}"/></svg>${BIG_LABEL[action] ? `<small>${BIG_LABEL[action]}</small>` : ''}`;
   b.addEventListener('touchstart', e => { e.preventDefault(); b.classList.add('on'); press(action); }, { passive: false });
   b.addEventListener('touchend', e => { e.preventDefault(); b.classList.remove('on'); release(action); }, { passive: false });
-  const wrap = document.getElementById(small ? 'topbtns' : 'buttons');
-  if (small && !PRIMARY.includes(action)) {
-    b.classList.add('more');
-    if (!wrap.querySelector('.moretoggle')) {
-      const t = document.createElement('div'); t.className = 'tb moretoggle'; t.textContent = 'MORE';
-      t.addEventListener('touchstart', e => { e.preventDefault(); wrap.classList.toggle('open'); t.textContent = wrap.classList.contains('open') ? 'LESS' : 'MORE'; }, { passive: false });
-      wrap.appendChild(t);
-    }
-  }
-  wrap.insertBefore(b, wrap.querySelector('.moretoggle'));
+  document.getElementById('buttons').appendChild(b);
   return b;
 }

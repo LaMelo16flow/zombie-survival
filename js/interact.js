@@ -15,7 +15,8 @@ export const interactSystem = {
   init() { addTouchButton('USE', 'interact'); },
   update() {
     const P = G.player;
-    if (G.driving) { promptEl().style.display = 'none'; return; }
+    const useBtn = document.querySelector('#buttons [data-a=interact]');
+    if (G.driving) { promptEl().style.display = 'none'; useBtn?.classList.add('ready'); return; }
     let best = null, bd = 1e9;
     for (const o of interactables) {
       if (o.enabled && !o.enabled()) continue;
@@ -26,6 +27,8 @@ export const interactSystem = {
       if (d < (o.r || 2) * (P.elevated ? 1.6 : 1) && score < bd) { bd = score; best = o; }
     }
     current = best;
+    useBtn?.classList.toggle('ready', !!best);
+    promptEl().classList.toggle('touch', !!useBtn);
     const el = promptEl();
     if (best) {
       const html = `<kbd>${window.matchMedia('(pointer:coarse)').matches ? '!' : 'E'}</kbd>${esc(best.label())}`;
