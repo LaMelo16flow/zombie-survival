@@ -1,7 +1,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G, VERSION, newSave } from './state.js';
 import { initInput, endFrame, input, trigger } from './input.js';
-import { buildTerrain, buildForest, waterUniforms, G_grass } from './world.js';
+import { buildTerrain, buildForest, waterUniforms, G_grass, updateCulling } from './world.js';
 import { settings, initSettings, trackFrame, openGameSettings } from './settings.js';
 import { tutorialSystem } from './tutorial.js';
 import { initInstall } from './install.js';
@@ -104,6 +104,7 @@ function loop(now) {
   endFrame();
   if (!G.running && G.creating) { G.time += dt; G.sky.update(G.camera, dt); animatePreview(dt); }
   else if (!G.running) { G.time += dt; G.sky.update(G.camera, dt); G.water.time.value += dt; G.camera.position.set(Math.sin(G.time * 0.05) * 60, 30, Math.cos(G.time * 0.05) * 60); G.camera.lookAt(0, 8, 0); }
+  updateCulling(dt, G.camera.position, G.scene.fog.far, G.drawScale || 1);
   trackFrame(dt);
   if (settings.outlines) G.outline.render(G.scene, G.camera); else G.renderer.render(G.scene, G.camera);
 }

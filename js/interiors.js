@@ -124,6 +124,7 @@ export function multiStory(scene, L, cx, cz, w, d, { color, roof = 0x5a5f6a, roo
     const y = base + (r.floor ? FH : 0) + 0.06, rx = cx + (r.dx ?? (-w / 2 + (sx + w / 2) * (0.25 + Math.random() * 0.5))), rz = cz + (r.side === 'front' ? d / 4 + (r.dz || 0) : -d / 4 + (r.dz || 0));
     furniture(scene, r.kind, rx, y, rz, r.rot || 0, r.loot, L.id);
   }
+  g1.userData.keep = true;
   multi.push({ x: cx, z: cz, hw: w / 2, hd: d / 2, base, g1, roof: roofM, slab });
 }
 

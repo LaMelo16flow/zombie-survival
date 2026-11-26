@@ -4,6 +4,35 @@ import { toon, merge } from './style.js';
 
 let _t = 0; const G_time = () => _t; export const tickWorld = t => { _t = t; };
 export const G_grass = [];
+/* ---------- Performance: split big instanced meshes into map tiles so only nearby tiles are drawn ---------- */
+export const cullables = [];      // { obj, x, z, r, max } — hidden when farther than max from the camera
+export function addCullable(obj, x, z, r, max) { cullables.push({ obj, x, z, r, max }); }
+let cullT = 0;
+export function updateCulling(dt, cam, fogFar = 260, scale = 1) {
+  cullT -= dt; if (cullT > 0) return; cullT = 0.25;
+  for (const c of cullables) { const d = Math.hypot(c.x - cam.x, c.z - cam.z) - c.r; c.obj.visible = d < Math.min(c.max * scale, fogFar + 30) && (!c.obj.userData.off); }
+}
+const TILE = 150;
+function splitInstanced(scene, im, max = 300) {
+  const n = im.count, m = new THREE.Matrix4(), c = new THREE.Color(), p = new THREE.Vector3(), buckets = new Map();
+  for (let i = 0; i < n; i++) {
+    im.getMatrixAt(i, m); p.setFromMatrixPosition(m);
+    const k = Math.floor(p.x / TILE) + ',' + Math.floor(p.z / TILE);
+    if (!buckets.has(k)) buckets.set(k, []); buckets.get(k).push(i);
+  }
+  const out = [];
+  for (const [k, ids] of buckets) {
+    const t = new THREE.InstancedMesh(im.geometry, im.material, ids.length);
+    ids.forEach((id, j) => { im.getMatrixAt(id, m); t.setMatrixAt(j, m); if (im.instanceColor) { im.getColorAt(id, c); t.setColorAt(j, c); } });
+    t.castShadow = im.castShadow; t.receiveShadow = im.receiveShadow;
+    t.computeBoundingSphere();               // a tight sphere per tile, so the camera can skip tiles it doesn't see
+    scene.add(t); out.push(t);
+    const [tx, tz] = k.split(',').map(Number);
+    addCullable(t, (tx + 0.5) * TILE, (tz + 0.5) * TILE, TILE * 0.72, max);
+  }
+  im.dispose?.();
+  return out;
+}
 export const WORLD_SIZE = 1800;          // metres, square, centred on 0,0 (the first 1 km in the middle is the original valley)
 export const HALF = WORLD_SIZE / 2;
 const SEED = 1337;
@@ -160,11 +189,15 @@ export function buildTerrain(scene) {
 // Stylised water: deep/shallow colours, white foam where it meets the shore, moving glints.
 export const waterUniforms = { time: { value: 0 }, light: { value: 1 } };
 function buildWater(scene) {
-  const SEG = 300;
+  const SEG = 200;
   const geo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, SEG, SEG); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, depth = new Float32Array(pos.count);
   for (let i = 0; i < pos.count; i++) depth[i] = WATER - heightAt(pos.getX(i), pos.getZ(i));
   geo.setAttribute('depth', new THREE.BufferAttribute(depth, 1));
+  // keep only triangles that touch water (most of the map is dry land, no need to draw it twice)
+  const idx = geo.index.array, keep = [];
+  for (let i = 0; i < idx.length; i += 3) if (depth[idx[i]] > -0.6 || depth[idx[i + 1]] > -0.6 || depth[idx[i + 2]] > -0.6) keep.push(idx[i], idx[i + 1], idx[i + 2]);
+  geo.setIndex(keep); geo.computeBoundingSphere();
   const mat = new THREE.ShaderMaterial({
     transparent: true, fog: true,
     uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), waterUniforms),
@@ -221,10 +254,10 @@ export function buildForest(scene, avoid = () => false) {
     new THREE.ConeGeometry(1.2, 2.4, 8).translate(0, 6.8, 0)
   ]);
   const roundGeo = merge([
-    new THREE.IcosahedronGeometry(2.2, 1).translate(0, 4.6, 0),
-    new THREE.IcosahedronGeometry(1.6, 1).translate(1.5, 4.0, 0.4),
-    new THREE.IcosahedronGeometry(1.5, 1).translate(-1.3, 4.2, -0.6),
-    new THREE.IcosahedronGeometry(1.4, 1).translate(0.2, 5.9, 0.3)
+    new THREE.IcosahedronGeometry(2.2, 0).translate(0, 4.6, 0),
+    new THREE.IcosahedronGeometry(1.6, 0).translate(1.5, 4.0, 0.4),
+    new THREE.IcosahedronGeometry(1.5, 0).translate(-1.3, 4.2, -0.6),
+    new THREE.IcosahedronGeometry(1.4, 0).translate(0.2, 5.9, 0.3)
   ]);
   const N = 2600;
   const trunks = new THREE.InstancedMesh(trunkGeo, toon(0x7a5236), N * 2);
@@ -249,7 +282,7 @@ export function buildForest(scene, avoid = () => false) {
     addCircle(x, z, 0.5 * sc); spots.tree.push({ x, z, i: spots.tree.length });
   }
   trunks.count = nt; pines.count = np; rounds.count = nr;
-  for (const t of [trunks, pines, rounds]) { t.castShadow = true; scene.add(t); }
+  for (const t of [trunks, pines, rounds]) { t.castShadow = true; splitInstanced(scene, t, 330); }
 
   // Rocks
   const rocks = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1, 0), toon(0xa7a196), 750);
@@ -264,7 +297,7 @@ export function buildForest(scene, avoid = () => false) {
     if (sc > 1) { addCircle(x, z, sc * 0.8); spots.rock.push({ x, z, i: spots.rock.length }); }
   }
   rocks.count = k; rocks.castShadow = true;
-  scene.add(rocks);
+  splitInstanced(scene, rocks, 260);
 
   // Grass tufts and flowers
   const blade = merge([0, 1, 2].map(i => new THREE.ConeGeometry(0.09, 0.7, 3, 1, true).translate(Math.cos(i * 2.1) * 0.15, 0.35, Math.sin(i * 2.1) * 0.15).rotateY(i)));
@@ -284,11 +317,10 @@ export function buildForest(scene, avoid = () => false) {
     if (f < 3000 && r() < 0.2) { m.compose(p.set(x + 0.3, h, z + 0.2), q, s.set(1, 1, 1)); flowers.setMatrixAt(f, m); flowers.setColorAt(f++, c.set(PETALS[Math.floor(r() * PETALS.length)])); }
   }
   grass.count = g; flowers.count = f;
-  scene.add(grass, flowers);
-  G_grass.push(grass, flowers);
+  G_grass.push(...splitInstanced(scene, grass, 90), ...splitInstanced(scene, flowers, 90));
 
   // Berry / herb bushes
-  const bushGeo = merge([new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.6, 0), new THREE.IcosahedronGeometry(0.6, 1).translate(0.6, 0.45, 0.2), new THREE.IcosahedronGeometry(0.55, 1).translate(-0.5, 0.45, -0.2)]);
+  const bushGeo = merge([new THREE.IcosahedronGeometry(0.8, 0).translate(0, 0.6, 0), new THREE.IcosahedronGeometry(0.6, 0).translate(0.6, 0.45, 0.2), new THREE.IcosahedronGeometry(0.55, 0).translate(-0.5, 0.45, -0.2)]);
   const NB = 1000, bushes = new THREE.InstancedMesh(bushGeo, toon(0xffffff), NB);
   const dots = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.1, 0), toon(0xffffff), NB * 4);
   let nb = 0, nd = 0;
@@ -303,5 +335,5 @@ export function buildForest(scene, avoid = () => false) {
     spots.bush.push({ x, z, i: nb, herb }); nb++;
   }
   bushes.count = nb; dots.count = nd;
-  scene.add(bushes, dots);
+  splitInstanced(scene, bushes, 200); splitInstanced(scene, dots, 120);
 }

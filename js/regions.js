@@ -1,6 +1,6 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
-import { biome, heightAt, addBox, CITY_H, HALF } from './world.js';
+import { biome, heightAt, addBox, CITY_H, HALF, addCullable } from './world.js';
 import { nearLocation } from './locations.js';
 import { paint, merge, toon } from './style.js';
 import { rng } from './util.js';
@@ -44,7 +44,9 @@ function buildCity(scene) {
     }
   }
   // merge in chunks so no single mesh gets too large
-  for (let i = 0; i < g.length; i += 400) { const m = new THREE.Mesh(merge(g.slice(i, i + 400)), VC); m.castShadow = true; m.receiveShadow = true; scene.add(m); }
+  // one mesh per city block row-chunk, each hidden when far away
+  for (let i = 0; i < g.length; i += 160) { const m = new THREE.Mesh(merge(g.slice(i, i + 160)), VC); m.castShadow = true; m.receiveShadow = true; scene.add(m);
+    m.geometry.computeBoundingSphere(); const bs = m.geometry.boundingSphere; addCullable(m, bs.center.x, bs.center.z, bs.radius, 380); }
 }
 
 /* ---------- Falling snow (follows the camera) ---------- */

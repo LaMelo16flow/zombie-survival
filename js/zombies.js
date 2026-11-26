@@ -193,7 +193,8 @@ export const zombieSystem = {
     addTouchButton('SHOOT', 'shoot');
     G.on?.('noise', n => { for (const zb of zombies) if (zb.alive && zb.state !== 'chase' && Math.hypot(zb.pos.x - n.x, zb.pos.z - n.z) < n.r) { zb.state = 'search'; zb.lastSeen = { x: n.x, z: n.z }; zb.searchT = 12; } });   // noise draws them to where it came from
   },
-  update(dt) {
+  update(dtF) {
+    let dt = dtF;
     const P = G.player;
     meleeCd -= dt; shootCd -= dt;
     if (P.aimT > 0) P.aimT -= dt;
@@ -221,6 +222,7 @@ export const zombieSystem = {
     for (let i = zombies.length - 1; i >= 0; i--) {
       const zb = zombies[i];
       const dx = P.pos.x - zb.pos.x, dz = P.pos.z - zb.pos.z, d = Math.hypot(dx, dz);
+      dt = dtF;
       if (!zb.alive) {
         zb.deadT += dt;
         zb.mesh.rotation.x = Math.max(-Math.PI / 2, -zb.deadT * 5);
@@ -229,6 +231,11 @@ export const zombieSystem = {
         continue;
       }
       if (d > 160 && !zb.boss) { G.scene.remove(zb.mesh); zombies.splice(i, 1); continue; }
+      // performance: far-away zombies think 3× less often and aren't drawn past the fog
+      zb.mesh.visible = d < (G.scene.fog?.far ?? 260) + 15;
+      const wantShadow = d < 28;   // only nearby zombies cast shadows (saves a lot of drawing)
+      if (zb.shadow !== wantShadow) { zb.shadow = wantShadow; zb.mesh.traverse(o => { if (o.isMesh) o.castShadow = wantShadow; }); }
+      if (d > 70 && !zb.boss) { zb.tickN = (zb.tickN || 0) + 1; if (zb.tickN % 3) continue; dt = dtF * 3; }
       if (zb.hitFlash > 0) { zb.hitFlash -= dt; if (zb.hitFlash <= 0) setFlash(zb, false); }
 
       // pick a target: player or the nearest ally/NPC (set up by factions)

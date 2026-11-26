@@ -227,7 +227,8 @@ export const vehicleSystem = {
     G.on('npcDied', () => {});
   },
   update(dt) {
-    for (const v of vehicles) if (v !== G.driving && v.data.hp < v.T.hp * 0.3) v.smoke.visible = true;
+    const cam = G.camera.position, far = (G.scene.fog?.far ?? 260) + 20;
+    for (const v of vehicles) { if (v !== G.driving && v.data.hp < v.T.hp * 0.3) v.smoke.visible = true; v.g.visible = v === G.driving || Math.hypot(v.pos.x - cam.x, v.pos.z - cam.z) < far; }
     if (!G.driving) headlight.intensity = 0;
   }
 };

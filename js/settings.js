@@ -26,7 +26,7 @@ export function applyGraphics() {
     const size = level === 'high' ? 2048 : 1024;
     if (G.sun.shadow.mapSize.x !== size) { G.sun.shadow.mapSize.set(size, size); G.sun.shadow.map?.dispose(); G.sun.shadow.map = null; }
   }
-  for (const m of G.grassMeshes || []) m.visible = level !== 'low';
+  for (const m of G.grassMeshes || []) { m.userData.off = level === 'low'; m.visible = level !== 'low'; }
   if (G.scene?.fog) G.drawScale = level === 'low' ? 0.75 : 1;
 }
 

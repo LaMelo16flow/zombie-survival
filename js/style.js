@@ -121,6 +121,11 @@ export function createSky(scene) {
     c.rotation.y = Math.random() * 6;
     clouds.add(c);
   }
+  {   // performance: bake all cloud puffs into one mesh
+    clouds.updateMatrixWorld(true); const parts = [];
+    clouds.traverse(o => { if (o.isMesh) { const g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); parts.push(g); } });
+    clouds.clear(); clouds.add(new THREE.Mesh(merge(parts), cMat));
+  }
   scene.add(clouds);
 
   // Stars

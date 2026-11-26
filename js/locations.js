@@ -1,12 +1,12 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
-import { addFlat, heightAt, addBox, addCircle } from './world.js';
+import { addFlat, heightAt, addBox, addCircle, addCullable } from './world.js';
 import { addInteractable } from './interact.js';
 import { spawnGroup } from './zombies.js';
 import { toast, banner } from './ui.js';
 import { sfx } from './audio.js';
 import { rng } from './util.js';
-import { toon } from './style.js';
+import { toon, paint, merge } from './style.js';
 import { houseInterior, multiStory, updateInteriors } from './interiors.js';
 
 // The places to explore. "type" decides buildings and loot.
@@ -75,7 +75,7 @@ function building(scene, x, z, w, d, h, color, roofColor = 0xc0574a) {
   wall(-(door / 2 + side / 2), d / 2, side, T); wall(door / 2 + side / 2, d / 2, side, T); // front with door
   const lintel = new THREE.Mesh(new THREE.BoxGeometry(door, h - 2.4, T), M(color)); lintel.position.set(0, 2.4 + (h - 2.4) / 2, d / 2); g.add(lintel);
   const floor = new THREE.Mesh(new THREE.BoxGeometry(w, 0.1, d), M(0x5b5048)); floor.position.y = 0.05; floor.receiveShadow = true; g.add(floor);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), M(roofColor)); roof.position.y = h + 0.15; roof.castShadow = true; g.add(roof);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), M(roofColor)); roof.position.y = h + 0.15; roof.castShadow = true; roof.userData.keep = true; g.add(roof);
   scene.add(g);
   buildings.push({ x, z, hw: w / 2, hd: d / 2, roof });
   return g;
@@ -126,9 +126,11 @@ export function giveLoot(type) {
 export function registerFlats() { for (const L of LOCATIONS) addFlat(L.x, L.z, L.r); }
 export function nearLocation(x, z, pad = 8) { return LOCATIONS.some(L => Math.hypot(x - L.x, z - L.z) < L.r + pad); }
 
-export function buildLocations(scene) {
+export function buildLocations(root) {
   const r = rng(42);
   for (const L of LOCATIONS) {
+    // each place is its own group so it can be hidden when far away (performance)
+    const scene = new THREE.Group(); root.add(scene); addCullable(scene, L.x, L.z, L.r + 30, 360);
     let c = 0;
     const id = () => L.id + ':' + (c++);
     const at = (dx, dz) => [L.x + dx, L.z + dz];
@@ -278,7 +280,29 @@ export function buildLocations(scene) {
         break;
       }
     }
+    batchStatic(scene);
   }
+}
+
+// Performance: merge every still object of a place (walls, floors, crates, furniture, cars…) into one mesh.
+// Roofs and upper floors stay separate because they hide when you walk inside.
+const BATCH_MAT = toon(0xffffff, { vertexColors: true });
+function batchStatic(group) {
+  group.updateMatrixWorld(true);
+  const geos = [], remove = [];
+  group.traverse(o => {
+    if (!o.isMesh || o.isInstancedMesh) return;
+    for (let p = o; p && p !== group; p = p.parent) if (p.userData.keep) return;
+    const mat = o.material; if (!mat || !mat.isMeshToonMaterial || mat.transparent) return;
+    let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    if (!g.attributes.normal) g.computeVertexNormals();
+    if (!g.attributes.color || !mat.vertexColors) g = paint(g, mat.color.getHex());
+    for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'color'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(o.matrixWorld); geos.push(g); remove.push(o);
+  });
+  if (geos.length < 2) return;
+  for (const o of remove) o.parent.remove(o);
+  const m = new THREE.Mesh(merge(geos), BATCH_MAT); m.castShadow = m.receiveShadow = true; group.add(m);
 }
 
 function palisade(scene, L, color) {
