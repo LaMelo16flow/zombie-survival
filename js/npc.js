@@ -151,7 +151,7 @@ export const npcSystem = {
       collide(n.pos, 0.4);
       settleY(n.pos, dt);
       n.mesh.rotation.y = n.rot;
-      if (dP < 90) animateHuman(n.mesh, dt, n.speed, { attack: n.attackT, aim: (n.weapon === 'pistol' || n.weapon === 'rifle') && n.attackT > 0 });
+      if (dP < 90) animateHuman(n.mesh, dt, n.speed, { attack: isRanged(n) ? 0 : n.attackT, aim: isRanged(n) && (n.attackT > 0 || n.cd > 0), stagger: n.stagger > 0 ? n.stagger : 0, weapon: n.weapon });
       if (n.role === 'member') { const m = n.data; m.x = n.pos.x; m.z = n.pos.z; m.hp = n.hp; }
     }
   }

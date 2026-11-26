@@ -67,7 +67,9 @@ export function updatePlayer(dt) {
   P.mesh.rotation.y = P.rot;
 
   if (P.attackT > 0) P.attackT = Math.max(0, P.attackT - dt * 3);
-  animateHuman(P.mesh, dt, P.speed, { attack: P.attackT, aim: P.aiming, roll: P.rollT > 0 ? 1 - P.rollT / 0.42 : 0, block: P.blocking });
+  P.hurtT = Math.max(0, (P.hurtT || 0) - dt);
+  animateHuman(P.mesh, dt, P.speed, { attack: P.attackT, aim: P.aiming, roll: P.rollT > 0 ? 1 - P.rollT / 0.42 : 0, block: P.blocking,
+    swim: inWater(P.pos.x, P.pos.z) && P.pos.y < WATER - 0.6, hurt: P.hurtT, combo: P.combo ? P.combo.n : 1 });
 
   followCamera(dt, P.pos.x, P.pos.y + (G.view?.height || 1.7), P.pos.z, P.camDist, G.view?.shoulder || 0);
   syncSave();
