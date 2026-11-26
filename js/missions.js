@@ -58,7 +58,7 @@ function start(m) {
   if (m.chain && M().active.some(a => a.chain === m.chain)) return;
   m.id = 'm' + Date.now() + Math.floor(Math.random() * 99); m.progress = 0; m.stage = 0;
   if (m.type === 'kill' || m.type === 'hunt') m.start = 0;
-  M().active.push(m); M().tracked = m.id;
+  M().active.push(m); M().tracked = m.id; G.emit('missionStarted', m);
   G.banner?.(m.title, 'NEW MISSION', 2.6); sfx.discover();
   G.story?.log?.(`Started mission: ${m.title}.`);
 }

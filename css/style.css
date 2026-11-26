@@ -194,3 +194,7 @@ input:focus, select:focus { border-color: var(--teal); outline: none; }
 #topbtns .tb.more { display: none; }
 #topbtns.open .tb.more { display: flex; }
 #topbtns .tb.moretoggle { background: var(--gold); color: var(--ink); }
+
+#fps { position: fixed; left: 50%; bottom: 4px; transform: translateX(-50%); z-index: 30; font: 800 11px var(--ui); background: rgba(21,18,28,.7); padding: 2px 8px; border-radius: 8px; pointer-events: none; }
+#tip { position: absolute; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 10px; align-items: center;
+  background: rgba(21,18,28,.85); border: 2px solid var(--teal); border-radius: 14px; padding: 8px 10px 8px 14px; max-width: min(520px, 90vw); font-size: 14px; }

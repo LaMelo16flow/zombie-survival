@@ -1,7 +1,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
 import { input, pressed, down, updateMoveFromKeys, addTouchButton } from './input.js';
-import { heightAt, collide, WATER } from './world.js';
+import { heightAt, collide, WATER, addCircle, removeCollider } from './world.js';
 import { addInteractable } from './interact.js';
 import { toon, paint, merge } from './style.js';
 import { toast, showChoice } from './ui.js';
@@ -67,8 +67,12 @@ function spawnVehicle(data) {
     label: () => data.hp <= 0 ? `Wrecked ${T.name} — repair (4 scrap)` : `Drive ${T.name} · fuel ${Math.round(data.fuel)}% · ${Math.round(data.hp / T.hp * 100)}% condition`,
     action: () => data.hp <= 0 ? repair(v) : enter(v) });
   vehicles.push(v);
+  park(v);
   return v;
 }
+// Parked cars are solid: two circles along the body. They are removed while you drive it.
+function park(v) { unpark(v); const h = v.g.rotation.y, o = v.T.len / 2 - v.T.wid / 2; v.colls = [1, -1].map(s => addCircle(v.pos.x + Math.sin(h) * o * s, v.pos.z + Math.cos(h) * o * s, v.T.wid / 2 + 0.05)); }
+function unpark(v) { for (const c of v.colls || []) removeCollider(c); v.colls = []; }
 
 function repair(v) {
   const inv = G.save.inv;
@@ -83,7 +87,7 @@ function enter(v) {
     if (G.save.inv.fuel > 0) { G.save.inv.fuel--; v.data.fuel = Math.min(100, v.data.fuel + 50); toast('You pour a fuel can in. (+50%)'); }
     else return toast('Out of fuel. Find a fuel can or the gas station.');
   }
-  G.driving = v; G.player.mesh.visible = false; engine.start();
+  G.driving = v; unpark(v); G.player.mesh.visible = false; engine.start();
   G.player.camYaw = v.data.rot + Math.PI; G.player.camPitch = 0.3;
   hud.classList.remove('hidden');
   toast('W/S gas & brake · A/D steer · E get out · F horn', 3);
@@ -93,8 +97,8 @@ function exit() {
   G.driving = null; G.exitT = G.time; engine.stop();
   const side = v.g.rotation.y + Math.PI / 2, P = G.player;
   P.pos.x = v.pos.x + Math.sin(side) * (v.T.wid / 2 + 1); P.pos.z = v.pos.z + Math.cos(side) * (v.T.wid / 2 + 1);
-  collide(P.pos, 0.45); P.mesh.visible = true; P.rot = v.g.rotation.y;
-  v.speed = 0; hud.classList.add('hidden');
+  P.mesh.visible = true; P.rot = v.g.rotation.y;
+  v.speed = 0; hud.classList.add('hidden'); park(v);
 }
 
 const fwd = new THREE.Vector3(), tmp = { x: 0, z: 0 };

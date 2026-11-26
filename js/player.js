@@ -31,8 +31,9 @@ export function updatePlayer(dt) {
   updateMoveFromKeys();
 
   // Camera orbit
-  P.camYaw -= input.lookX * 0.0035;
-  P.camPitch = clamp(P.camPitch + input.lookY * 0.0028, -0.25, 1.1);
+  const sens = G.settings?.sens || 1, inv = G.settings?.invertY ? -1 : 1;
+  P.camYaw -= input.lookX * 0.0035 * sens;
+  P.camPitch = clamp(P.camPitch + input.lookY * 0.0028 * sens * inv, -0.25, 1.1);
   if (G.driving) { G.driveUpdate(dt); followCamera(dt, P.pos.x, P.pos.y + 1.6, P.pos.z, 10); syncSave(); return; }
 
   // Movement relative to camera

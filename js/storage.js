@@ -156,6 +156,7 @@ export function openPause() {
       <button id="p-local">Save on this device</button>
       <button id="p-music">Music: ${audioPrefs.music ? 'on' : 'off'}</button>
       <button id="p-sfx">Sounds: ${audioPrefs.sfx ? 'on' : 'off'}</button>
+      <button id="p-game">Settings</button>
       <button id="p-set">GitHub settings</button>
       <button id="p-quit">Quit to title</button>
     </div></div>`);
@@ -165,6 +166,7 @@ export function openPause() {
   on('p-load', () => openLoadList(openPause));
   on('p-local', () => { saveLocal(); toast('Saved on this device.'); closeModal(); });
   on('p-set', () => openSettings(openPause));
+  on('p-game', () => G.openGameSettings(openPause));
   on('p-music', () => { audioPrefs.music = !audioPrefs.music; savePrefs(); openPause(); });
   on('p-sfx', () => { audioPrefs.sfx = !audioPrefs.sfx; savePrefs(); openPause(); });
   on('p-quit', () => { saveLocal(); location.reload(); });

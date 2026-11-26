@@ -3,6 +3,7 @@ import { rng, fbm, clamp } from './util.js';
 import { toon, merge } from './style.js';
 
 let _t = 0; const G_time = () => _t; export const tickWorld = t => { _t = t; };
+export const G_grass = [];
 export const WORLD_SIZE = 1000;          // metres, square, centred on 0,0
 export const HALF = WORLD_SIZE / 2;
 const SEED = 1337;
@@ -259,6 +260,7 @@ export function buildForest(scene, avoid = () => false) {
   }
   grass.count = g; flowers.count = f;
   scene.add(grass, flowers);
+  G_grass.push(grass, flowers);
 
   // Berry / herb bushes
   const bushGeo = merge([new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.6, 0), new THREE.IcosahedronGeometry(0.6, 1).translate(0.6, 0.45, 0.2), new THREE.IcosahedronGeometry(0.55, 1).translate(-0.5, 0.45, -0.2)]);

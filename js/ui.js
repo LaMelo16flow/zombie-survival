@@ -175,7 +175,7 @@ const GROUPS = [
   ['Ammo', ['ammo', 'bolts']]
 ];
 export function openInventory() {
-  const inv = G.save.inv;
+  const inv = G.save.inv; G.emit('bagOpened');
   const card = k => { const it = ITEMS[k]; return `<div class="item"><div class="ic">${icon(it.icon)}</div><div class="n">${inv[k] || 0}</div><div class="l">${it.name}</div>
     ${it.use ? `<button class="small" data-use="${k}" ${inv[k] ? '' : 'disabled'}>${it.use.label}</button>` : ''}</div>`; };
   const groups = GROUPS.map(([title, keys]) => { const have = keys.filter(k => inv[k] > 0 || ['food', 'water'].includes(k)); return have.length ? `<h3>${title}</h3><div class="items">${have.map(card).join('')}</div>` : ''; }).join('');

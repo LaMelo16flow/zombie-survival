@@ -1,7 +1,9 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G, VERSION, newSave } from './state.js';
 import { initInput, endFrame, input } from './input.js';
-import { buildTerrain, buildForest, waterUniforms } from './world.js';
+import { buildTerrain, buildForest, waterUniforms, G_grass } from './world.js';
+import { settings, initSettings, trackFrame, openGameSettings } from './settings.js';
+import { tutorialSystem } from './tutorial.js';
 import { Outline, createSky } from './style.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD, uiSystem, banner } from './ui.js';
@@ -74,7 +76,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, uiSystem];
+  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, tutorialSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
@@ -97,12 +99,15 @@ function loop(now) {
   endFrame();
   if (!G.running && G.creating) { G.time += dt; G.sky.update(G.camera, dt); animatePreview(dt); }
   else if (!G.running) { G.time += dt; G.sky.update(G.camera, dt); G.water.time.value += dt; G.camera.position.set(Math.sin(G.time * 0.05) * 60, 30, Math.cos(G.time * 0.05) * 60); G.camera.lookAt(0, 8, 0); }
-  G.outline.render(G.scene, G.camera);
+  trackFrame(dt);
+  if (settings.outlines) G.outline.render(G.scene, G.camera); else G.renderer.render(G.scene, G.camera);
 }
 
 initRenderer();
 initInput(canvas);
 buildWorld();
+G.grassMeshes = G_grass; G.settings = settings; G.openGameSettings = openGameSettings;
+initSettings();
 G.camera.position.set(30, 40, 30); G.camera.lookAt(0, 0, 0);
 document.getElementById('btn-new').onclick = () => openCreator(({ name, look, perk }) => {
   clearLocal();
@@ -119,5 +124,5 @@ const boot = takeBootSave();
 if (boot) startGame(boot);
 requestAnimationFrame(loop);
 G.newGame = () => { clearLocal(); location.reload(); };
-G.banner = banner; G.sfx = sfx;
+G.banner = banner; G.sfx = sfx; G.toast = (m, s) => import('./ui.js').then(u => u.toast(m, s));
 window.G = G; // handy for debugging in the browser console
