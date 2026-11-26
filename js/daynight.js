@@ -39,7 +39,8 @@ export const dayNight = {
     if (dawn > 0) { top.lerp(SKY.dawn[0], dawn * 0.8); hor.lerp(SKY.dawn[1], dawn * 0.85); }
     if (dusk > 0) { top.lerp(SKY.dusk[0], dusk * 0.8); hor.lerp(SKY.dusk[1], dusk * 0.85); }
     // weather: overcast greys the sky, fog pulls the horizon in, lightning flashes everything white
-    const Wt = G.weather || { overcast: 0, fog: 0, flash: 0 };
+    const W0 = G.weather || { overcast: 0, fog: 0, flash: 0 }, R = G.regionFx || { fog: 0, snow: 0 };
+    const Wt = { ...W0, fog: Math.max(W0.fog, R.fog), overcast: Math.max(W0.overcast, R.snow * 0.5) };
     tmp.setRGB(0.55, 0.6, 0.66).multiplyScalar((0.25 + light * 0.75) * (1 - (Wt.rain || 0) * 0.35));
     top.lerp(tmp, Wt.overcast * 0.75); hor.lerp(tmp, Wt.overcast * 0.6 + Wt.fog * 0.3);
     if (Wt.flash > 0) { top.lerp(C(0xeef2ff), Wt.flash * 0.7); hor.lerp(C(0xeef2ff), Wt.flash * 0.5); }

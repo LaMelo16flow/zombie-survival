@@ -24,7 +24,9 @@ const TYPES = {
 const SPAWNS = [
   ['car', 30, 62, 0.3, 0xe8364a], ['truck', 150, -96, 1.6, 0x4a6fa5], ['car', -150, -175, 2.4, 0xffc94a],
   ['car', 335, 40, 0.1, 0xf4efe4], ['truck', 300, -262, 3.0, 0x5d6b47], ['car', -215, 178, 1.1, 0x36c5d6],
-  ['truck', 60, 92, 2.2, 0x8a5a9f], ['car', -40, -60, 0.8, 0x7ad35a]
+  ['truck', 60, 92, 2.2, 0x8a5a9f], ['car', -40, -60, 0.8, 0x7ad35a],
+  // the bigger world
+  ['car', 690, 60, 1.5, 0xe8e4e0], ['truck', 640, -205, 0.2, 0x2a2622], ['truck', 70, -700, 2.8, 0xd1495b], ['truck', -700, 590, 0.9, 0x5d6b47], ['car', 790, 290, 2.0, 0x36c5d6]
 ];
 
 const MAT = toon(0xffffff, { vertexColors: true });
@@ -197,7 +199,8 @@ function addPumpStation() {
 
 export const vehicleSystem = {
   init() {
-    if (!G.save.vehicles || !G.save.vehicles.length) G.save.vehicles = SPAWNS.map(([type, x, z, rot, color], i) => ({ id: i, type, x, z, rot, color, fuel: 30 + Math.round(Math.random() * 50), hp: TYPES[type].hp }));
+    G.save.vehicles = G.save.vehicles || [];
+    SPAWNS.forEach(([type, x, z, rot, color], i) => { if (!G.save.vehicles.some(v => v.id === i)) G.save.vehicles.push({ id: i, type, x, z, rot, color, fuel: 30 + Math.round(Math.random() * 50), hp: TYPES[type].hp }); });   // older saves get the new cars too
     for (const d of G.save.vehicles) spawnVehicle(d);
     headlight = new THREE.SpotLight(0xfff2d0, 0, 60, 0.55, 0.6, 1.2); G.scene.add(headlight, headlight.target);
     hud = document.createElement('div'); hud.id = 'drivehud'; hud.className = 'hidden'; document.getElementById('hud').appendChild(hud);

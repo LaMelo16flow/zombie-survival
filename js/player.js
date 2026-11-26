@@ -1,7 +1,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
 import { input, down, updateMoveFromKeys } from './input.js';
-import { heightAt, collide, inWater } from './world.js';
+import { heightAt, collide, inWater, solidAt } from './world.js';
 import { WATER } from './world.js';
 import { sfx } from './audio.js';
 import { settleY } from './interiors.js';
@@ -83,6 +83,11 @@ export function followCamera(dt, x, y, z, dist) {
     camTarget.y + Math.sin(P.camPitch) * dist,
     camTarget.z + Math.cos(P.camYaw) * cp * dist
   );
+  // pull the camera in front of tall buildings instead of looking through them
+  for (let t = 0.15; t <= 1.001; t += 0.085) {
+    const px = camTarget.x + (camPos.x - camTarget.x) * t, py = camTarget.y + (camPos.y - camTarget.y) * t, pz = camTarget.z + (camPos.z - camTarget.z) * t;
+    if (solidAt(px, py, pz)) { const k = Math.max(0.1, t - 0.1); camPos.set(camTarget.x + (camPos.x - camTarget.x) * k, camTarget.y + (camPos.y - camTarget.y) * k, camTarget.z + (camPos.z - camTarget.z) * k); break; }
+  }
   const ground = heightAt(camPos.x, camPos.z) + 0.6;
   if (camPos.y < ground) camPos.y = ground;
   G.camera.position.lerp(camPos, Math.min(1, dt * 14));

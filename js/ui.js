@@ -40,6 +40,7 @@ const PATHS = {
   star: 'M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21l1.4-7L2 9.3l7-.8z',
   book: 'M4 4c3-1 6-1 8 1 2-2 5-2 8-1v15c-3-1-6-1-8 1-2-2-5-2-8-1z',
   gear: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9.4 5.5-2-.3-.6 1.5 1.2 1.7-2 2-1.7-1.2-1.5.6-.3 2h-3l-.3-2-1.5-.6-1.7 1.2-2-2 1.2-1.7-.6-1.5-2-.3v-3l2-.3.6-1.5L4.4 6.6l2-2 1.7 1.2 1.5-.6.3-2h3l.3 2 1.5.6 1.7-1.2 2 2-1.2 1.7.6 1.5 2 .3z',
+  snow: 'M11 2h2v4.2l2.6-1.5 1 1.7L13 8.6V11h2.4l2.2-3.6 1.7 1-1.5 2.6H22v2h-4.2l1.5 2.6-1.7 1L15.4 13H13v2.4l3.6 2.2-1 1.7-2.6-1.5V22h-2v-4.2l-2.6 1.5-1-1.7L11 15.4V13H8.6l-2.2 3.6-1.7-1L6.2 13H2v-2h4.2L4.7 8.4l1.7-1L8.6 11H11V8.6L7.4 6.4l1-1.7L11 6.2z',
   x: 'M6 4.6 12 10.6l6-6L19.4 6l-6 6 6 6-1.4 1.4-6-6-6 6L4.6 18l6-6-6-6z'
 };
 export const icon = n => `<svg class="i" viewBox="0 0 24 24"><path d="${PATHS[n] || PATHS.scrap}"/></svg>`;
@@ -76,7 +77,7 @@ function updateDamageNumbers(dt) {
 
 /* ---------- Status bars ---------- */
 // Health is the ring around your portrait; food, water and stamina are small rings beside it.
-const GAUGES = [['hunger', 'Food', 'var(--food)', 'food'], ['thirst', 'Water', 'var(--water)', 'water'], ['stamina', 'Stamina', 'var(--stam)', 'bolt']];
+const GAUGES = [['hunger', 'Food', 'var(--food)', 'food'], ['thirst', 'Water', 'var(--water)', 'water'], ['stamina', 'Stamina', 'var(--stam)', 'bolt'], ['warmth', 'Warmth', '#bfe3ff', 'snow']];
 const gEls = {};
 export function initHUD() {
   const wrap = $('bars'); wrap.innerHTML = '';
@@ -92,7 +93,7 @@ export function initHUD() {
 export function showDeath(cause) {
   const s = G.save;
   showModal(`<div class="panel center death"><h2>YOU DIED</h2>
-    <p>${cause === 'zombie' ? 'The dead got you.' : cause === 'starving' ? 'Hunger and thirst took you.' : cause === 'raider' ? 'Raiders cut you down.' : cause === 'crash' ? 'You crashed.' : cause === 'wolf' ? 'The wolves got you.' : cause === 'explosion' ? 'Blown apart by an exploder.' : cause === 'boss' ? 'The boss was too strong — this time.' : cause === 'acid' ? 'Melted by acid.' : cause === 'boar' ? 'A boar gored you.' : 'You did not make it.'}</p>
+    <p>${cause === 'zombie' ? 'The dead got you.' : cause === 'starving' ? 'Hunger and thirst took you.' : cause === 'raider' ? 'Raiders cut you down.' : cause === 'crash' ? 'You crashed.' : cause === 'wolf' ? 'The wolves got you.' : cause === 'explosion' ? 'Blown apart by an exploder.' : cause === 'boss' ? 'The boss was too strong — this time.' : cause === 'acid' ? 'Melted by acid.' : cause === 'cold' ? 'You froze to death.' : cause === 'boar' ? 'A boar gored you.' : 'You did not make it.'}</p>
     <p>Survived to day ${s.world.day} · ${s.stats.kills} zombies killed</p>
     <button class="primary" id="d-again">Start again</button> <button id="d-load">Load last save</button></div>`);
   G.lockModal = true;
@@ -126,8 +127,8 @@ export function updateHUD(dt) {
   if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0) $('banner').classList.remove('on'); }
   const st = G.save.stats;
   for (const [k] of GAUGES) {
-    const f = Math.max(0, Math.min(1, st[k] / 100)), g = gEls[k];
-    g.style.setProperty('--v', (f * 100) + '%'); g.classList.toggle('low', f < 0.2); if (k === 'stamina') g.classList.toggle('full', f > 0.99);
+    const f = Math.max(0, Math.min(1, (st[k] ?? 100) / 100)), g = gEls[k];
+    g.style.setProperty('--v', (f * 100) + '%'); g.classList.toggle('low', f < 0.2); if (k === 'stamina' || k === 'warmth') g.classList.toggle('full', f > 0.99);
   }
   $('portrait').style.setProperty('--hp-p', (st.hp / st.maxHp * 100) + '%');
   $('portrait').classList.toggle('low', st.hp / st.maxHp < 0.25);
@@ -147,11 +148,12 @@ export function updateHUD(dt) {
 let mapImg = null;
 function mapImage() {
   if (mapImg) return mapImg;
-  const S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S;
+  const S = 360, cv = document.createElement('canvas'); cv.width = cv.height = S;
   const c = cv.getContext('2d'), img = c.createImageData(S, S);
   for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
     const h = heightAt((i + 0.5) / S * WORLD_SIZE - WORLD_SIZE / 2, (j + 0.5) / S * WORLD_SIZE - WORLD_SIZE / 2);
-    const col = h < WATER - 1.2 ? [44, 110, 160] : h < WATER ? [70, 170, 190] : h < WATER + 0.9 ? [214, 196, 140] : h > 46 ? [150, 144, 136] : h > 30 ? [86, 128, 70] : [96, 150, 72];
+    const wx = (i + 0.5) / S * WORLD_SIZE - WORLD_SIZE / 2, wz = (j + 0.5) / S * WORLD_SIZE - WORLD_SIZE / 2, bm = G.biomeAt ? G.biomeAt(wx, wz) : {};
+    const col = h < WATER - 1.2 ? [44, 110, 160] : h < WATER ? [70, 170, 190] : bm.snow > 0.45 && h > 14 ? [228, 236, 244] : bm.city > 0.6 ? [104, 110, 118] : h < WATER + 0.9 ? [214, 196, 140] : bm.swamp > 0.5 ? [78, 104, 56] : h > 46 ? [150, 144, 136] : h > 30 ? [86, 128, 70] : [96, 150, 72];
     const o = (j * S + i) * 4; img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = 255;
   }
   c.putImageData(img, 0, 0);

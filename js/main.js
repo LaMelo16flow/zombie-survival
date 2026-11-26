@@ -5,6 +5,7 @@ import { buildTerrain, buildForest, waterUniforms, G_grass } from './world.js';
 import { settings, initSettings, trackFrame, openGameSettings } from './settings.js';
 import { tutorialSystem } from './tutorial.js';
 import { initInstall } from './install.js';
+import { regionSystem } from './regions.js';
 import { Outline, createSky } from './style.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD, uiSystem, banner } from './ui.js';
@@ -77,7 +78,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, tutorialSystem, uiSystem];
+  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, regionSystem, tutorialSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;

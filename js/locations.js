@@ -23,7 +23,15 @@ export const LOCATIONS = [
   { id: 'lab',      name: 'Helix Research Lab',   type: 'lab',      x: -340, z: -340, r: 30 },
   { id: 'police',   name: 'Kessler County Police', type: 'police',   x: -110, z: 250,  r: 26 },
   { id: 'apts',     name: 'Hillside Apartments',  type: 'apartment', x: 170, z: 120,  r: 24 },
-  { id: 'school',   name: 'Pine Valley School',   type: 'school',   x: 30,   z: -240, r: 26 }
+  { id: 'school',   name: 'Pine Valley School',   type: 'school',   x: 30,   z: -240, r: 26 },
+  // the bigger world
+  { id: 'downtown', name: 'Kessler City Downtown', type: 'city',    x: 720,  z: 20,   r: 46 },
+  { id: 'gunshop',  name: 'Ridge Gun Shop',       type: 'gunshop',  x: 660,  z: -230, r: 18 },
+  { id: 'offices',  name: 'Meridian Offices',     type: 'offices',  x: 780,  z: 260,  r: 24 },
+  { id: 'lodge',    name: 'Snowcap Ski Lodge',    type: 'lodge',    x: 60,   z: -730, r: 30 },
+  { id: 'radar',    name: 'Northwatch Radar',     type: 'radar',    x: -280, z: -780, r: 26 },
+  { id: 'bayou',    name: 'Bayou Shacks',         type: 'bayou',    x: -720, z: 560,  r: 32 },
+  { id: 'mill',     name: 'Old Marsh Mill',       type: 'mill',     x: -580, z: 780,  r: 26 }
 ];
 
 const LOOT = {
@@ -38,6 +46,13 @@ const LOOT = {
   apartment:{ food: [0, 2], water: [0, 2], cloth: [0, 2], meds: [0, 1], scrap: [0, 1], herbs: [0, 1] },
   school:   { food: [0, 2], water: [0, 1], cloth: [1, 2], meds: [0, 1], rope: [0, 1], scrap: [0, 1] },
   house_kitchen: { food: [1, 3], water: [1, 2], veg: [0, 1] },
+  city:     { food: [0, 2], water: [0, 2], meds: [0, 1], scrap: [1, 3], metal: [0, 2], ammo: [0, 6], cloth: [0, 2] },
+  gunshop:  { ammo: [8, 20], bolts: [0, 8], scrap: [0, 2], gun: 0.35, armor: 0.1 },
+  offices:  { scrap: [1, 3], metal: [0, 2], meds: [0, 1], cloth: [0, 2], water: [0, 2] },
+  lodge:    { food: [1, 3], cloth: [1, 3], leather: [0, 2], meds: [0, 1], fuel: [0, 1] },
+  radar:    { metal: [1, 3], scrap: [1, 3], ammo: [2, 8], armor: 0.12 },
+  bayou:    { herbs: [1, 3], food: [0, 2], rope: [0, 1], fuel: [0, 1], hide: [0, 1] },
+  mill:     { wood: [2, 5], rope: [0, 1], seeds: [1, 3], scrap: [0, 2] },
   camp: {}, raider: {}, tower: {}
 };
 
@@ -190,6 +205,55 @@ export function buildLocations(scene) {
         for (let i = 0; i < 6; i++) prop(scene, new THREE.CylinderGeometry(0.05, 0.05, 3, 5), 0x9aa3ad, L.x - 12 + i * 5, L.z + 14, 1.5);
         break;
       }
+      case 'city': {   // downtown: a two-storey department store, shops and wrecks
+        multiStory(scene, L, L.x, L.z - 8, 22, 16, { color: 0xc9b8a3, roof: 0x4a4f57, rooms: [
+          { floor: 0, side: 'front', kind: 'shelf', loot: 'city', dx: -7 }, { floor: 0, side: 'back', kind: 'shelf', loot: 'city', dx: -3, dz: -2.6 },
+          { floor: 0, side: 'back', kind: 'fridge', loot: 'house_kitchen', dx: -9, dz: -2 }, { floor: 1, side: 'front', kind: 'desk', loot: 'city', dx: -5 },
+          { floor: 1, side: 'back', kind: 'locker', loot: 'city', dx: -7, dz: -2.5 }, { floor: 1, side: 'back', kind: 'crate', loot: 'city', dx: -2 }] });
+        for (const [dx, dz] of [[-26, 16], [26, 16], [-26, -22], [26, -22]]) { building(scene, L.x + dx, L.z + dz, 11, 9, 4, [0xa8c8e8, 0xe8a598, 0xf2d6a2, 0x9aa3ad][Math.abs(dx + dz) % 4], 0x4a4f57); crate(scene, id(), L.x + dx - 2, L.z + dz - 1, 'city'); }
+        for (let i = 0; i < 7; i++) car(scene, L.x - 35 + i * 11, L.z + 30 + (i % 2) * 5, (i % 3) * 1.3, [0x7a2020, 0x204a7a, 0x777777, 0x2f5a2f, 0xb08a20, 0x222222, 0xe8e4e0][i]);
+        break;
+      }
+      case 'gunshop': {
+        building(scene, L.x, L.z, 12, 9, 3.6, 0x5a4a3a, 0x2a2622);
+        for (let i = 0; i < 3; i++) crate(scene, id(), L.x - 4 + i * 4, L.z - 2, 'gunshop');
+        const sign = new THREE.Mesh(new THREE.BoxGeometry(6, 0.9, 0.15), M(0xc0392b)); sign.position.set(L.x, heightAt(L.x, L.z) + 3.2, L.z + 4.6); scene.add(sign);
+        break;
+      }
+      case 'offices': {
+        multiStory(scene, L, L.x, L.z - 4, 20, 16, { color: 0x6d8a9a, roof: 0x2a3550, rooms: [
+          { floor: 0, side: 'front', kind: 'desk', loot: 'offices', dx: -6 }, { floor: 0, side: 'back', kind: 'shelf', loot: 'offices', dx: -3, dz: -2.6 },
+          { floor: 1, side: 'front', kind: 'desk', loot: 'offices', dx: -4 }, { floor: 1, side: 'back', kind: 'locker', loot: 'offices', dx: -7, dz: -2.5 }] });
+        break;
+      }
+      case 'lodge': {
+        multiStory(scene, L, L.x, L.z - 4, 20, 14, { color: 0x8a5a3a, roof: 0x3a2a22, rooms: [
+          { floor: 0, side: 'front', kind: 'sofa', loot: 'lodge', dx: -5, rot: Math.PI }, { floor: 0, side: 'back', kind: 'fridge', loot: 'house_kitchen', dx: -8, dz: -2 },
+          { floor: 1, side: 'front', kind: 'bed', loot: 'lodge', dx: -6 }, { floor: 1, side: 'back', kind: 'locker', loot: 'lodge', dx: -3, dz: -2.4 }] });
+        for (let i = 0; i < 5; i++) prop(scene, new THREE.BoxGeometry(0.12, 1.8, 0.12), 0xd1495b, L.x - 14 + i * 7, L.z + 14, 0.9);
+        break;
+      }
+      case 'radar': {
+        building(scene, L.x - 6, L.z, 12, 9, 3.4, 0x9aa3ad, 0x5a6068);
+        crate(scene, id(), L.x - 8, L.z - 1, 'radar'); crate(scene, id(), L.x - 4, L.z - 1, 'radar');
+        prop(scene, new THREE.CylinderGeometry(0.5, 0.8, 10, 8), 0xbfc6cd, L.x + 10, L.z, 5, 1);
+        const dish = prop(scene, new THREE.SphereGeometry(4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.6), 0xf4f8fc, L.x + 10, L.z, 10.5); dish.rotation.x = -0.7;
+        break;
+      }
+      case 'bayou': {
+        for (const [dx, dz] of [[-12, -8], [10, -10], [-8, 12], [12, 10]]) {
+          building(scene, L.x + dx, L.z + dz, 7, 6, 2.8, [0x7a6a4a, 0x6a5a3a, 0x8a7a5a][Math.abs(dx) % 3], 0x4a4f42);
+          crate(scene, id(), L.x + dx, L.z + dz - 1, 'bayou');
+        }
+        car(scene, L.x + 2, L.z + 22, 0.4, 0x5d6b47);
+        break;
+      }
+      case 'mill': {
+        building(scene, L.x, L.z, 12, 10, 6, 0x8a6342, 0x4a3320);
+        crate(scene, id(), L.x - 3, L.z - 2, 'mill'); crate(scene, id(), L.x + 3, L.z - 2, 'mill');
+        const wheel = prop(scene, new THREE.TorusGeometry(3, 0.4, 6, 14), 0x5a4030, L.x - 7.4, L.z, 3.4); wheel.rotation.y = Math.PI / 2;
+        break;
+      }
       case 'lab': {
         building(scene, L.x, L.z, 18, 12, 5, 0xd0d6dc, 0x2c3e50);
         for (let i = 0; i < 3; i++) crate(scene, id(), L.x - 5 + i * 5, L.z - 3, 'lab');
@@ -242,7 +306,7 @@ export const locationSystem = {
       // A horde waits in dangerous places when you arrive
       if (d < L.r + 60 && d > L.r + 30 && !L.faction && !L._spawned) {
         L._spawned = true;
-        const n = { military: 10, hospital: 7, mall: 8, lab: 6, town: 6, police: 8, apartment: 6, school: 7 }[L.type] || 3;
+        const n = { military: 10, hospital: 7, mall: 8, lab: 6, town: 6, police: 8, apartment: 6, school: 7, city: 14, gunshop: 8, offices: 8, lodge: 6, radar: 8, bayou: 6, mill: 5 }[L.type] || 3;
         spawnGroup(L.x, L.z, n, L.type === 'military' ? ['walker', 'runner', 'brute'] : ['walker', 'walker', 'runner']);
       }
       if (d > L.r + 200) L._spawned = false;

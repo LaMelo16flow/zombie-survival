@@ -80,7 +80,9 @@ function die(a) {
 }
 
 function pickKind(x, z) {
-  const r = Math.random();
+  const r = Math.random(), b = G.biomeAt ? G.biomeAt(x, z) : {};
+  if (b.snow > 0.5) return r < 0.45 ? 'wolf' : r < 0.75 ? 'deer' : 'rabbit';
+  if (b.swamp > 0.5) return r < 0.5 ? 'boar' : r < 0.75 ? 'rabbit' : 'deer';
   if (isNight() && r < 0.3) return 'wolf';
   if (r < 0.35) return 'rabbit';
   if (r < 0.7) return 'deer';
@@ -104,7 +106,7 @@ export const animalSystem = {
       if (animals.filter(a => a.alive).length < 14) {
         const ang = Math.random() * 6.28, d = 70 + Math.random() * 60;
         const x = P.pos.x + Math.sin(ang) * d, z = P.pos.z + Math.cos(ang) * d;
-        if (Math.abs(x) < HALF - 30 && Math.abs(z) < HALF - 30 && heightAt(x, z) > WATER + 1 && heightAt(x, z) < 40 && !nearLocation(x, z, 25)) {
+        if (Math.abs(x) < HALF - 30 && Math.abs(z) < HALF - 30 && heightAt(x, z) > WATER + 1 && heightAt(x, z) < 70 && !nearLocation(x, z, 25) && !(G.biomeAt && G.biomeAt(x, z).city > 0.4)) {
           const kind = pickKind(x, z), n = kind === 'wolf' ? 3 : kind === 'deer' ? 2 + Math.floor(Math.random() * 2) : kind === 'rabbit' ? 2 : 1;
           for (let i = 0; i < n; i++) spawn(kind, x + (Math.random() - 0.5) * 6, z + (Math.random() - 0.5) * 6);
         }

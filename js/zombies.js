@@ -1,7 +1,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
 import { pressed, down, addTouchButton } from './input.js';
-import { heightAt, collide } from './world.js';
+import { heightAt, collide, HALF } from './world.js';
 import { makeHuman, animateHuman, giveWeapon } from './characters.js';
 import { isNight } from './daynight.js';
 import { toast, damageNumber } from './ui.js';
@@ -19,6 +19,8 @@ const KINDS = {
   screamer: { hp: 30, speed: 1.4, chase: 3.2, dmg: 4, shirts: [0xe8e4e0, 0xd8d2c4, 0xc4bfb4, 0xe0dccf], skin: 0xc9d4c0, thin: true, look: { hairStyle: 'long', hair: 0xf0f0f0 }, special: 'scream' },
   exploder: { hp: 50, speed: 1.0, chase: 2.7, dmg: 0, shirts: [0x6b8a3a, 0x7a9a3a, 0x5a7a2a, 0x6a8a4a], skin: 0x8fbf5a, fat: true, look: { hairStyle: 'buzz' }, special: 'explode' },
   armored:  { hp: 120, speed: 1.3, chase: 3.0, dmg: 14, shirts: [0x2a3550, 0x252f45, 0x2a3550, 0x303a55], skin: 0x8a9a7a, look: { hairStyle: 'buzz', hat: 0x1a2030 }, armored: true },
+  frozen:   { hp: 70, speed: 1.1, chase: 2.8, dmg: 12, shirts: [0xdfe9f4, 0xb8c8d8, 0xc4d4e0, 0xa8bccc], skin: 0xb8d4e8, look: { hairStyle: 'short', hair: 0xf4f8fc } },
+  drowned:  { hp: 45, speed: 1.5, chase: 3.6, dmg: 10, shirts: [0x3a5a4a, 0x2a4a5a, 0x4a5a3a, 0x3a4a4a], skin: 0x6a9a8a, look: { hairStyle: 'long', hair: 0x2a3a2a } },
   crawler:  { hp: 25, speed: 0.9, chase: 2.4, dmg: 8, shirts: [0x5a4a3a, 0x4a4a4a, 0x6a5a4a, 0x3a3a3a], skin: 0x8a9a7a, crawl: true }
 };
 export { KINDS };
@@ -65,11 +67,14 @@ export function spawnGroup(x, z, n, kinds = ['walker']) {
 
 function maxZombies() {
   const mods = G.save.world.mods;
-  return Math.round((isNight() ? 45 : 24) * (mods.density || 1));
+  return Math.round((isNight() ? 45 : 24) * (mods.density || 1) * (1 + (G.regionFx?.city || 0) * 0.6));
 }
 
-function pickKind() {
-  const r = Math.random(), d = G.save.world.day;
+function pickKind(x = 0, z = 0) {
+  const r = Math.random(), d = G.save.world.day, b = G.biomeAt ? G.biomeAt(x, z) : {};
+  if (b.snow > 0.5 && r < 0.55) return 'frozen';
+  if (b.swamp > 0.5 && r < 0.55) return 'drowned';
+  if (b.city > 0.5 && r < 0.12) return Math.random() < 0.5 ? 'screamer' : 'armored';
   if (r < Math.min(0.05, 0.012 * d)) return 'screamer';
   if (r < Math.min(0.1, 0.025 * d)) return 'exploder';
   if (r < Math.min(0.15, 0.03 * d) && d >= 2) return 'armored';
@@ -197,7 +202,7 @@ export const zombieSystem = {
       spawnT = 0.6;
       const a = Math.random() * 6.28, d = 55 + Math.random() * 45;
       const x = P.pos.x + Math.sin(a) * d, z = P.pos.z + Math.cos(a) * d;
-      if (Math.abs(x) < 480 && Math.abs(z) < 480 && !(G.isSafe && G.isSafe(x, z))) spawnZombie(x, z, pickKind());
+      if (Math.abs(x) < HALF - 20 && Math.abs(z) < HALF - 20 && !(G.isSafe && G.isSafe(x, z))) spawnZombie(x, z, pickKind(x, z));
     }
 
     const night = isNight();
