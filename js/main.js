@@ -4,6 +4,7 @@ import { initInput, endFrame, input, trigger } from './input.js';
 import { buildTerrain, buildForest, waterUniforms, G_grass } from './world.js';
 import { settings, initSettings, trackFrame, openGameSettings } from './settings.js';
 import { tutorialSystem } from './tutorial.js';
+import { initInstall } from './install.js';
 import { Outline, createSky } from './style.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD, uiSystem, banner } from './ui.js';
@@ -22,7 +23,7 @@ import { bossSystem } from './boss.js';
 import { characterSystem, openCreator, animatePreview, PERKS } from './character.js';
 import { missionSystem } from './missions.js';
 import { sfx, unlock } from './audio.js';
-import { storageSystem, loadLocal, takeBootSave, openLoadList, openSettings, clearLocal } from './storage.js';
+import { storageSystem, loadLocal, takeBootSave, openLoadList, openSettings, clearLocal, saveLocal } from './storage.js';
 import { registerFlats, buildLocations, locationSystem, nearLocation } from './locations.js';
 import { dayNight } from './daynight.js';
 import { survival } from './survival.js';
@@ -106,8 +107,9 @@ function loop(now) {
 initRenderer();
 initInput(canvas);
 buildWorld();
-G.grassMeshes = G_grass; G.trigger = trigger; G.settings = settings; G.openGameSettings = openGameSettings;
+G.grassMeshes = G_grass; G.trigger = trigger; G.saveNow = saveLocal; G.settings = settings; G.openGameSettings = openGameSettings;
 initSettings();
+initInstall();
 G.camera.position.set(30, 40, 30); G.camera.lookAt(0, 0, 0);
 document.getElementById('btn-new').onclick = () => openCreator(({ name, look, perk }) => {
   clearLocal();
