@@ -38,7 +38,7 @@ export function updatePlayer(dt) {
 
   // Movement relative to camera
   const sprint = down('sprint') && (P.canSprint ? P.canSprint() : true);
-  const maxSpeed = (sprint ? 8.5 : 4.6) * (P.speedMul || 1) * (inWater(P.pos.x, P.pos.z) ? 0.55 : 1);
+  const maxSpeed = (sprint && !P.blocking ? 8.5 : 4.6) * (P.speedMul || 1) * (P.combatSpeed ?? 1) * (inWater(P.pos.x, P.pos.z) ? 0.55 : 1);
   const fx = -Math.sin(P.camYaw), fz = -Math.cos(P.camYaw);
   const rx = -fz, rz = fx;
   let vx = (fx * -input.mz + rx * input.mx), vz = (fz * -input.mz + rz * input.mx);
@@ -52,6 +52,7 @@ export function updatePlayer(dt) {
     P.rot += d * Math.min(1, dt * 12);
   }
   P.moving = mag > 0.05;
+  if (P.rollT > 0) P.moving = false;
   if (P.moving) { P.stepT = (P.stepT || 0) - dt * (sprint ? 1.7 : 1) * mag; if (P.stepT <= 0) { P.stepT = 0.42; sfx.step(inWater(P.pos.x, P.pos.z)); } }
   P.sprinting = sprint && P.moving;
   P.speed = mag * (sprint ? 1 : 0.55);
@@ -66,7 +67,7 @@ export function updatePlayer(dt) {
   P.mesh.rotation.y = P.rot;
 
   if (P.attackT > 0) P.attackT = Math.max(0, P.attackT - dt * 3);
-  animateHuman(P.mesh, dt, P.speed, { attack: P.attackT, aim: P.aiming });
+  animateHuman(P.mesh, dt, P.speed, { attack: P.attackT, aim: P.aiming, roll: P.rollT > 0 ? 1 - P.rollT / 0.42 : 0, block: P.blocking });
 
   followCamera(dt, P.pos.x, P.pos.y + (G.view?.height || 1.7), P.pos.z, P.camDist, G.view?.shoulder || 0);
   syncSave();

@@ -248,3 +248,12 @@ input[type=range] { padding: 0; accent-color: var(--flare); border: 0; backgroun
 [data-device=phone] .panel { padding: 16px; } [data-device=phone] .panel h2 { font-size: 19px; }
 /* PC: crosshair sits where you aim (right of the character) — keyboard keys shown in the hub */
 [data-device=pc] .hub .rail button kbd { margin-left: auto; font: 500 11px var(--ui); color: var(--dim); border: 1px solid var(--line2); border-radius: 6px; padding: 1px 6px; }
+
+#buttons { width: 250px; }
+#buttons .tb[data-a=dodge] { right: 100px; bottom: 96px; width: 58px; height: 58px; }
+#buttons .tb[data-a=block] { right: 180px; bottom: 12px; width: 58px; height: 58px; }
+#crosshair.on { background: var(--hp); box-shadow: 0 0 0 3px rgba(255,90,100,.35); }
+[data-device=phone] #tip, [data-device=tablet] #tip { bottom: auto; top: calc(max(10px, env(safe-area-inset-top)) + 52px); max-width: 52vw; font-size: 13px; }
+#clock .t { white-space: nowrap; }
+[data-device=phone] #clock { width: auto; right: max(12px, env(safe-area-inset-right)); text-align: right; }
+[data-device=phone] #clock .s { justify-content: flex-end; }

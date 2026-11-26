@@ -40,7 +40,7 @@ const AI = {
       }
       if (b.mode === 'charge') {
         zb.rot = b.dir;
-        if (d < 2.6 * 1.5 && !b.hit) { b.hit = true; P.hurt(38, 'boss'); P.pos.x += Math.sin(b.dir) * 4; P.pos.z += Math.cos(b.dir) * 4; shake(0.5); }
+        if (d < 2.6 * 1.5 && !b.hit) { b.hit = true; P.hurt(38, 'boss', zb); P.pos.x += Math.sin(b.dir) * 4; P.pos.z += Math.cos(b.dir) * 4; shake(0.5); }
         if (b.t <= 0) { b.mode = 'walk'; b.t = 4 + Math.random() * 3; b.hit = false; }
         return 15;
       }
@@ -48,7 +48,7 @@ const AI = {
       if (d < 4.5 && zb.atkCd <= 0) {      // ground slam
         zb.atkCd = 2.2; zb.atkAnim = 1; shake(0.45);
         burst(zb.pos.x, zb.pos.y + 0.2, zb.pos.z, 0xb9a07a, 26, 6, 0.2); impact(zb.pos.x, zb.pos.y + 0.5, zb.pos.z, 0xffffff, 2.5); sfx.hit();
-        if (d < 5) P.hurt(24, 'boss');
+        if (d < 5) P.hurt(24, 'boss', zb);
       }
       if (b.t <= 0 && d > 7 && d < 40) { b.mode = 'windup'; b.t = 1.0; }
       if (!b.called && zb.hp < zb.maxHp * 0.5) { b.called = true; toast('The Colonel calls his soldiers!', 2.5); spawnGroup(zb.pos.x, zb.pos.z, 8, ['armored', 'armored', 'walker', 'runner']); sfx.roar(); }
@@ -69,7 +69,7 @@ const AI = {
         burst(zb.pos.x, zb.pos.y + 1.5, zb.pos.z, 0x9a7ad0, 18, 4, 0.16); sfx.scream(zb.pos.x, zb.pos.z);
       }
       if (b.spit <= 0 && d > 5 && d < 28) { b.spit = 2.5; spit(zb); }
-      if (d < 2.6 && zb.atkCd <= 0) { zb.atkCd = 0.9; zb.atkAnim = 1; P.hurt(zb.k.dmg, 'boss'); }
+      if (d < 2.6 && zb.atkCd <= 0) { zb.atkCd = 0.9; zb.atkAnim = 1; P.hurt(zb.k.dmg, 'boss', zb); }
       if (!b.called && zb.hp < zb.maxHp * 0.6) { b.called = true; toast('Patient Zero shrieks — runners are coming!', 2.5); spawnGroup(zb.pos.x, zb.pos.z, 7, ['runner']); }
       if (!b.called2 && zb.hp < zb.maxHp * 0.25) { b.called2 = true; spawnGroup(zb.pos.x, zb.pos.z, 5, ['exploder', 'runner']); }
       return d > 2.2 ? zb.k.chase : 0;

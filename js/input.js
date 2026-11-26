@@ -8,7 +8,7 @@ export const input = { mx: 0, mz: 0, lookX: 0, lookY: 0, enabled: false };
 
 const KEYMAP = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
-  ShiftLeft: 'sprint', ShiftRight: 'sprint', KeyE: 'interact', KeyF: 'attack', Space: 'attack', KeyR: 'shoot',
+  ShiftLeft: 'sprint', ShiftRight: 'sprint', KeyE: 'interact', KeyF: 'attack', Space: 'dodge', KeyV: 'block', KeyR: 'shoot',
   KeyB: 'build', KeyM: 'map', KeyQ: 'faction', KeyJ: 'journal', KeyI: 'inventory', Escape: 'menu', KeyP: 'menu',
   Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', Digit4: 'slot4', Digit5: 'slot5', Digit6: 'slot6', Digit7: 'slot7', Digit8: 'slot8', Digit9: 'slot9', KeyC: 'craft', KeyZ: 'nextcat', KeyK: 'skills', KeyO: 'missions', KeyH: 'hub', Tab: 'hub',
   KeyG: 'command', KeyT: 'rotate', KeyX: 'demolish'
@@ -93,9 +93,11 @@ function initTouch() {
 const BIG_ICON = {
   attack: 'M14.5 3l6.5 6.5-2 2-1.5-1.5-8.4 8.4 1.4 1.4-2 2L5 18.3l-2 2L1.7 19l2-2-1.5-3.5 2-2 1.4 1.4L14 4.5 12.5 3z',
   shoot: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 2.1V7h-2V4.1A8 8 0 0 0 4.1 11H7v2H4.1a8 8 0 0 0 6.9 6.9V17h2v2.9a8 8 0 0 0 6.9-6.9H17v-2h2.9A8 8 0 0 0 13 4.1z',
+  dodge: 'M12 4a8 8 0 1 1-7.4 5H2l3.5-4L9 9H6.7A6 6 0 1 0 12 6z',
+  block: 'M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z',
   interact: 'M9 11V5a2 2 0 0 1 4 0v5h1V7a2 2 0 0 1 4 0v8a7 7 0 0 1-7 7c-3 0-5-1.6-6.4-4L2 12.6a1.8 1.8 0 0 1 3-1.8l2 2.6V11z'
 };
-const BIG_LABEL = { attack: '', shoot: 'Shoot', interact: 'Use' };
+const BIG_LABEL = { attack: '', shoot: 'Shoot', interact: 'Use', dodge: 'Roll', block: 'Block' };
 export function trigger(action) { press(action); setTimeout(() => release(action), 60); }
 export function addTouchButton(label, action, small = false) {
   if (!isTouch || small) return null;

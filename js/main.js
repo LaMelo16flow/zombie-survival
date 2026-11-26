@@ -7,6 +7,7 @@ import { tutorialSystem } from './tutorial.js';
 import { initInstall } from './install.js';
 import { regionSystem } from './regions.js';
 import { initView } from './view.js';
+import { combatSystem } from './combat.js';
 import { Outline, createSky } from './style.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD, uiSystem, banner } from './ui.js';
@@ -79,7 +80,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, regionSystem, tutorialSystem, uiSystem];
+  G.systems = [combatSystem, weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, regionSystem, tutorialSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;
@@ -89,7 +90,8 @@ function startGame(save) {
 let last = performance.now();
 function loop(now) {
   requestAnimationFrame(loop);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  let dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (G.hitstop > 0) { G.hitstop -= dt; dt *= 0.06; }   // a split-second freeze on heavy hits
   if (G.running && !G.paused && !G.dead) {
     G.time += dt;
     updatePlayer(dt);

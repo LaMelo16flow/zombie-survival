@@ -87,7 +87,7 @@ function attack(n, target, d, isPlayer) {
   n.cd = ranged ? 1.3 : 0.9; n.attackT = 1;
   const dmg = ranged ? (n.weapon === 'rifle' ? 34 : 18) : 14;
   if (ranged) tracer(new THREE.Vector3(n.pos.x, n.pos.y + 1.4, n.pos.z), new THREE.Vector3(target.pos.x, target.pos.y + 1.2, target.pos.z));
-  if (isPlayer) G.player.hurt(dmg * 0.6, 'raider');
+  if (isPlayer) G.player.hurt(dmg * 0.6, 'raider', n);
   else if (target.k) hitZombie(target, dmg, n.pos.x, n.pos.z, 3);
   else if (target.onHit) target.onHit(dmg);
   else target.hurt?.(dmg);

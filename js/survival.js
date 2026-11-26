@@ -9,7 +9,7 @@ import { ARMOR } from './items.js';
 export const survival = {
   init() {
     G.player.canSprint = () => G.save.stats.stamina > 3;
-    G.player.hurt = (dmg, from) => damage(dmg, from);
+    G.player.hurt = (dmg, from, src) => damage(dmg, from, src);
   },
   update(dt) {
     const s = G.save.stats, P = G.player;
@@ -28,10 +28,11 @@ export const survival = {
 };
 const warned = { h: false, t: false };
 
-export function damage(dmg, from) {
+export function damage(dmg, from, src) {
   const s = G.save.stats;
   if (G.dead) return;
   if (G.driving && G.damageCar) { G.damageCar(dmg, from); return; }   // in a car, the car takes the hit
+  if (G.defend) { dmg = G.defend(dmg, from, src); if (dmg <= 0) return; }   // dodge roll / block
   if (from !== 'starving') dmg *= 1 - (ARMOR[G.save.inv.armor] || ARMOR.none).block;   // armour
   s.hp -= dmg;
   if (dmg > 2) {

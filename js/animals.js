@@ -129,7 +129,7 @@ export const animalSystem = {
         if (a.state === 'attack') {
           if (a.hp < k.hp * 0.3 || d > range * 2.5) a.state = a.hp < k.hp * 0.3 ? 'flee' : 'wander';
           face = Math.atan2(dx, dz); speed = d > 1.6 ? k.run : 0;
-          if (d < 1.8 && a.cd <= 0 && !G.player.elevated) { a.cd = 1.2; P.hurt(k.dmg, a.kind); if (a.kind === 'boar') { G.player.pos.x += dx / d * 1.5; G.player.pos.z += dz / d * 1.5; } }
+          if (d < 1.8 && a.cd <= 0 && !G.player.elevated) { a.cd = 1.2; P.hurt(k.dmg, a.kind, a); if (a.kind === 'boar') { G.player.pos.x += dx / d * 1.5; G.player.pos.z += dz / d * 1.5; } }
         }
         if (a.state === 'flee') { face = Math.atan2(-dx, -dz); speed = k.run; if (d > 60) a.state = 'wander'; }
       }

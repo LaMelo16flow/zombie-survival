@@ -171,7 +171,7 @@ export function giveWeapon(h, kind) {
 
 /* ---------- Animation ---------- */
 // speed 0..1, zombie = arms forward + lurch, attack 0..1 swing progress, aim = arm raised
-export function animateHuman(h, dt, speed, { zombie = false, attack = 0, aim = false } = {}) {
+export function animateHuman(h, dt, speed, { zombie = false, attack = 0, aim = false, roll = 0, block = false, stagger = 0 } = {}) {
   const p = h.userData.parts;
   h.userData.phase += dt * (4 + speed * 8);
   const ph = h.userData.phase;
@@ -192,4 +192,9 @@ export function animateHuman(h, dt, speed, { zombie = false, attack = 0, aim = f
     p.torso.rotation.y = attack > 0 ? (attack - 0.5) * 0.5 : 0;
     p.head.rotation.y = Math.sin(ph * 0.15) * 0.08 * (1 - speed);   // idle glance
   }
+  p.body.rotation.x = 0;
+  if (stagger > 0) { p.torso.rotation.x = -0.35; p.head.rotation.x = -0.4; }
+  if (roll > 0) { p.body.rotation.x = roll * Math.PI * 2; p.body.position.y = 0.45; p.legL.rotation.x = p.legR.rotation.x = -1.2; p.armL.rotation.x = p.armR.rotation.x = -1.4; }
+  if (block) { p.armL.rotation.x = -1.6; p.armR.rotation.x = -1.6; p.armL.rotation.z = -0.5; p.armR.rotation.z = 0.5; p.torso.rotation.x = 0.12; }
+  else if (!zombie) { p.armL.rotation.z = 0; }
 }

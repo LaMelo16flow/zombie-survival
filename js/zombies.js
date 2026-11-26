@@ -94,13 +94,17 @@ export function hitZombie(zb, dmg, fromX, fromZ, knock = 4) {
   if (zb.k.armored) dmg *= dmg >= 45 ? 0.85 : 0.4;          // riot gear: only heavy hits get through
   if (zb.boss) { knock *= 0.1; dmg *= zb.boss.dmgMul?.(zb) ?? 1; }
   zb.hp -= dmg; zb.hitFlash = 0.12; setFlash(zb, true); sfx.hit();
+  // hit reaction: a stagger that interrupts their attack (big zombies only flinch from heavy hits)
+  const poise = zb.boss ? 120 : zb.k.scale ? 45 : zb.k.armored ? 25 : 0;
+  if (dmg > poise) { zb.stagger = Math.max(zb.stagger || 0, Math.min(0.7, 0.2 + dmg / 120)); zb.atkCd = Math.max(zb.atkCd, 0.45); }
+  if (dmg >= 45) G.hitstop = Math.max(G.hitstop || 0, 0.05);
   const hy = zb.pos.y + 1.2 * (zb.k.scale || 1);
   burst(zb.pos.x, hy, zb.pos.z, 0x7a0f14, 6, 3.5); damageNumber(zb.pos.x, hy + 0.5, zb.pos.z, dmg, dmg >= 50); impact(zb.pos.x, hy, zb.pos.z, 0xffffff, 0.5 + dmg / 80);
   const dx = zb.pos.x - fromX, dz = zb.pos.z - fromZ, l = Math.hypot(dx, dz) || 1;
   zb.kx = dx / l * knock; zb.kz = dz / l * knock;
   zb.state = 'chase';
   if (zb.hp <= 0) {
-    zb.alive = false; zb.deadT = 0; setFlash(zb, false); zb.deadY = zb.pos.y;
+    zb.alive = false; zb.deadT = 0; setFlash(zb, false); zb.deadY = zb.pos.y; G.hitstop = Math.max(G.hitstop || 0, 0.045);
     if (zb.k.special === 'explode' && !zb.exploded) { zb.exploded = true; setTimeout(() => explode(zb.pos.x, zb.pos.y, zb.pos.z, 4.5, 30), 50); }
     G.save.stats.kills++; sfx.splat(zb.pos.x, zb.pos.z);
     G.emit?.('zombieKilled', zb);
@@ -113,7 +117,12 @@ let meleeCd = 0, shootCd = 0;
 
 function melee() {
   const P = G.player, w = WEAPONS[G.save.inv.melee] || WEAPONS.fists;
-  if (meleeCd > 0) return; meleeCd = w.cd; P.attackT = 1; sfx.swing();
+  if (meleeCd > 0 || P.rollT > 0) return; meleeCd = w.cd; P.attackT = 1; sfx.swing();
+  // combo: the third swing in a row hits harder and knocks them flying
+  const chain = P.combo && G.time - P.combo.t < 1.1 ? P.combo.n + 1 : 1;
+  P.combo = { n: chain >= 3 ? 0 : chain, t: G.time };
+  const cm = chain >= 3 ? 1.5 : 1, ck = chain >= 3 ? 9 : 5;
+  if (chain >= 3) { P.attackT = 1.15; G.hitstop = Math.max(G.hitstop || 0, 0.07); }
   // soft lock-on: turn toward the closest enemy in reach (feels good on a phone)
   let near = null, nd = w.range + 1;
   for (const t of [...zombies.filter(z => z.alive), ...(G.hostileTargets?.() || []), ...(G.meleeTargets?.() || [])]) { const d = Math.hypot(t.pos.x - P.pos.x, t.pos.z - P.pos.z); if (d < nd) { nd = d; near = t; } }
@@ -123,7 +132,7 @@ function melee() {
     const dx = zb.pos.x - P.pos.x, dz = zb.pos.z - P.pos.z, d = Math.hypot(dx, dz);
     if (d > w.range * (zb.k.scale || 1)) continue;
     let a = Math.atan2(dx, dz) - P.rot; a = Math.atan2(Math.sin(a), Math.cos(a));
-    if (Math.abs(a) < w.arc / 2 + 0.3) hitZombie(zb, w.dmg * (G.save.world.mods.playerDmg || 1) * (G.skillMul?.('melee') || 1), P.pos.x, P.pos.z, 5);
+    if (Math.abs(a) < w.arc / 2 + 0.3) hitZombie(zb, w.dmg * cm * (G.save.world.mods.playerDmg || 1) * (G.skillMul?.('melee') || 1), P.pos.x, P.pos.z, ck);
   }
   for (const n of G.hostileTargets?.() || []) {
     const dx = n.pos.x - P.pos.x, dz = n.pos.z - P.pos.z;
@@ -166,6 +175,7 @@ function shoot() {
       const perp = tmpV.addScaledVector(d, -t).length();
       if (perp < (zb.hitR ?? 0.7 * (zb.k.scale || 1))) { best = zb; bestT = t; }
     }
+    if (!best && !gun.pellets) best = aimAssist(targets, origin, d);
     if (best?.npc) best.npc.hurt(dmg); else if (best?.onHit) best.onHit(dmg); else if (best) hitZombie(best, dmg, P.pos.x, P.pos.z, gun.pellets ? 1.5 : 3);
   }
   impact(P.pos.x + Math.sin(P.rot) * 0.9, P.pos.y + 1.4, P.pos.z + Math.cos(P.rot) * 0.9, 0xffd060, 0.45);
@@ -193,7 +203,7 @@ export const zombieSystem = {
       if (pressed('shoot') || (down('shoot') && shootCd <= 0)) shoot();
     }
     flashLight.intensity = Math.max(0, flashLight.intensity - dt * 300);
-    giveWeaponOnce();
+    giveWeaponOnce(); updateCrosshair(dt);
 
     // Spawning around the player (not in safe zones)
     spawnT -= dt;
@@ -257,7 +267,7 @@ export const zombieSystem = {
         zb.atkCd -= dt;
         if (td <= reach + 0.25 && zb.atkCd <= 0 && Math.abs((target ? target.pos.y : P.pos.y) - zb.pos.y) < 1.6) {
           zb.atkCd = 1.1; zb.atkAnim = 1;
-          if (target) target.hurt(zb.k.dmg, zb); else if (!P.elevated) P.hurt(zb.k.dmg * (mods.zDmg || 1), 'zombie');
+          if (target) target.hurt(zb.k.dmg, zb); else if (!P.elevated) P.hurt(zb.k.dmg * (mods.zDmg || 1), 'zombie', zb);
         }
       } else if (zb.state === 'search') {
         // go to where they last saw you, then sniff around
@@ -271,6 +281,7 @@ export const zombieSystem = {
         if (zb.wanderT <= 0) { zb.wanderT = 2 + Math.random() * 5; zb.rot += (Math.random() - 0.5) * 2.5; zb.idle = Math.random() < 0.4; }
         speed = zb.idle ? 0 : zb.k.speed * 0.5;
       }
+      if (zb.stagger > 0) { zb.stagger -= dt; speed = 0; }
       if (zb.screamCd) zb.screamCd = Math.max(0, zb.screamCd - dt) || null;
       zb.atkAnim = Math.max(0, zb.atkAnim - dt * 2.5);
       const mvA = zb.detour ? wallFollow(zb) : zb.rot;
@@ -293,11 +304,35 @@ export const zombieSystem = {
         if (zb.stuck > 0.35) { zb.stuck = 0; zb.detour = findDetour(zb); }
       }
       zb.mesh.rotation.y = zb.rot;
-      if (d < 90 && !zb.boss) animateHuman(zb.mesh, dt, speed / 4, { zombie: true, attack: zb.atkAnim });
+      if (d < 90 && !zb.boss) animateHuman(zb.mesh, dt, speed / 4, { zombie: true, attack: zb.atkAnim, stagger: zb.stagger > 0 ? zb.stagger : 0 });
       if (zb.k.crawl) { const p = zb.mesh.userData.parts; p.body.rotation.x = 1.35; p.body.position.y = 0.32; p.legL.rotation.x = p.legR.rotation.x = 0.2; p.head.rotation.x = -1.1; }
     }
   }
 };
+
+// Aim assist: if the shot just missed, take the target closest to the crosshair inside a small cone
+// (wider on touch screens, where aiming is harder)
+function aimAssist(targets, origin, dir) {
+  const cone = G.view?.device === 'pc' ? 0.06 : 0.16;
+  let best = null, bs = cone;
+  for (const zb of targets) {
+    if (!zb.alive) continue;
+    tmpV.set(zb.pos.x, zb.pos.y + (zb.aimY ?? 1.2 * (zb.k?.scale || 1)), zb.pos.z).sub(origin);
+    const dist = tmpV.length(); if (dist > 45 || dist < 1) continue;
+    const ang = Math.acos(Math.min(1, tmpV.dot(dir) / dist));
+    if (ang < bs) { bs = ang; best = zb; }
+  }
+  return best;
+}
+// Crosshair turns red when a shot would land
+let chT = 0;
+function updateCrosshair(dt) {
+  chT -= dt; if (chT > 0) return; chT = 0.1;
+  const el = document.getElementById('crosshair'); if (!el) return;
+  if (!G.save.inv.gun) { el.classList.remove('on'); return; }
+  const dir = new THREE.Vector3(); G.camera.getWorldDirection(dir);
+  el.classList.toggle('on', !!aimAssist(zombies, G.camera.position, dir));
+}
 
 // A zombie that spots you wakes up the ones around it (they spread the alarm a little further)
 function alertPack(zb, depth = 0) {

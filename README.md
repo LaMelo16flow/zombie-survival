@@ -15,8 +15,10 @@ Every decision changes where the story goes. Create your own faction, recruit su
 | Move | WASD | left thumb |
 | Look | mouse (click to lock) | drag right side |
 | Sprint | Shift | push stick to the edge |
-| Melee | F / Space / left click | HIT |
+| Melee | F / left click | big orange button |
 | Shoot | R / right click | SHOOT |
+| Dodge roll | Space | Roll |
+| Block (perfect block staggers) | hold V | Block |
 | Use / search | E | hand button (lights up when there is something to use) |
 | Backpack | I | hub |
 | Map | M | hub |
@@ -58,6 +60,7 @@ Every decision changes where the story goes. Create your own faction, recruit su
 - **v0.24** — view adapted per device: PC over-the-shoulder camera with mouse-wheel zoom, phone (sideways) wider view, closer camera and a smaller HUD, tablet in between, ultra-wide fix, "turn your phone sideways" screen, keyboard keys shown in the hub on PC; vehicles: you can't be hurt inside a car — every hit damages the car instead (if it breaks you climb out unhurt), crashes only damage the car, and the car you drive is solid so zombies surround it and claw at it
 - **v0.25** — NPCs protect themselves: survivors run from zombies toward a safe camp (and swing back if cornered), everyone dodges some hits and flinches when struck, fighters hit and step back, shooters keep their distance, badly hurt or outnumbered people retreat (your members back to you), they bandage up in a fight and heal when it's quiet, and they also react to attacking wolves and boars
 - **v0.26** — smarter zombies: they walk around walls, houses, trees and cars instead of getting stuck; spread out to surround you; one that spots you wakes the pack around it; noise (gunshots, fights) draws them to where it came from; they go to the last place they saw you and search around; runners lunge the last few metres; they claw at the car you're in
+- **v0.27** — combat feel: dodge roll with invincibility frames, block (hits from the front mostly stopped; a perfect block staggers the attacker), 3-hit melee combos, zombies stagger when hit (big ones only from heavy hits), hit-stop on heavy hits and kills, aim assist for guns (stronger on touch) and a crosshair that turns red when a shot would land
 
 ## Saving to GitHub
 1. Create a fine-grained token: github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → *Generate new token*.
