@@ -267,6 +267,7 @@ export const zombieSystem = {
         if (!target && G.driving) td = G.carSurfDist(zb.pos.x, zb.pos.z) + 0.9;   // claw at the car you're in
         const reach = 1.3 * (zb.k.scale || 1);
         if (td > reach) speed = zb.k.chase * (mods.zSpeed || 1) * (night ? 1.15 : 1);
+        if (td > reach && G.clawCheck && G.clawCheck(zb, dt, tx, tz)) { speed = 0; zb.detour = null; }   // a barricade is in the way: break it
         // runners lunge the last few metres
         zb.lungeCd = (zb.lungeCd || 0) - dt;
         if (zb.kind === 'runner' && td < 4 && td > reach && zb.lungeCd <= 0) { zb.lungeCd = 3; zb.lungeT = 0.3; }

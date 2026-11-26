@@ -1,6 +1,6 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
-import { addFlat, heightAt, addBox, addCircle, addCullable } from './world.js';
+import { addFlat, heightAt, addBox, addCircle, addCullable, addOBox } from './world.js';
 import { addInteractable } from './interact.js';
 import { spawnGroup } from './zombies.js';
 import { toast, banner } from './ui.js';
@@ -8,6 +8,8 @@ import { sfx } from './audio.js';
 import { rng } from './util.js';
 import { toon, paint, merge } from './style.js';
 import { houseInterior, multiStory, updateInteriors } from './interiors.js';
+import { registerDoor } from './defenses.js';
+import { addSpinner } from './props.js';
 
 // The places to explore. "type" decides buildings and loot.
 export const LOCATIONS = [
@@ -78,6 +80,7 @@ function building(scene, x, z, w, d, h, color, roofColor = 0xc0574a) {
   const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), M(roofColor)); roof.position.y = h + 0.15; roof.castShadow = true; roof.userData.keep = true; g.add(roof);
   scene.add(g);
   buildings.push({ x, z, hw: w / 2, hd: d / 2, roof });
+  registerDoor('d' + Math.round(x) + '_' + Math.round(z), x, z + d / 2, door, 0);
   return g;
 }
 
@@ -239,7 +242,7 @@ export function buildLocations(root) {
         building(scene, L.x - 6, L.z, 12, 9, 3.4, 0x9aa3ad, 0x5a6068);
         crate(scene, id(), L.x - 8, L.z - 1, 'radar'); crate(scene, id(), L.x - 4, L.z - 1, 'radar');
         prop(scene, new THREE.CylinderGeometry(0.5, 0.8, 10, 8), 0xbfc6cd, L.x + 10, L.z, 5, 1);
-        const dish = prop(scene, new THREE.SphereGeometry(4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.6), 0xf4f8fc, L.x + 10, L.z, 10.5); dish.rotation.x = -0.7;
+        const dish = prop(scene, new THREE.SphereGeometry(4, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2.6), 0xf4f8fc, L.x + 10, L.z, 10.5); dish.rotation.order = 'YXZ'; dish.rotation.x = -0.7; addSpinner(dish, 'y', 0.35);
         break;
       }
       case 'bayou': {
@@ -254,6 +257,8 @@ export function buildLocations(root) {
         building(scene, L.x, L.z, 12, 10, 6, 0x8a6342, 0x4a3320);
         crate(scene, id(), L.x - 3, L.z - 2, 'mill'); crate(scene, id(), L.x + 3, L.z - 2, 'mill');
         const wheel = prop(scene, new THREE.TorusGeometry(3, 0.4, 6, 14), 0x5a4030, L.x - 7.4, L.z, 3.4); wheel.rotation.y = Math.PI / 2;
+        for (let k = 0; k < 4; k++) { const sp = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.25, 0.25), M(0x5a4030)); sp.rotation.z = k * Math.PI / 4; wheel.add(sp); }
+        addSpinner(wheel, 'z', 0.7);
         break;
       }
       case 'lab': {
@@ -305,14 +310,20 @@ function batchStatic(group) {
   const m = new THREE.Mesh(merge(geos), BATCH_MAT); m.castShadow = m.receiveShadow = true; group.add(m);
 }
 
+// A solid wall of posts around a camp, with a gap at +z for the gate (the gate itself is built by the faction).
+export const PALISADE_N = 22;
 function palisade(scene, L, color) {
-  const n = 22;
-  for (let i = 0; i < n; i++) {
-    if (i === 0) continue; // gate facing +z
-    const a = i / n * Math.PI * 2, R = L.r * 0.9;
-    const x = L.x + Math.sin(a) * R, z = L.z + Math.cos(a) * R;
-    prop(scene, new THREE.BoxGeometry(2 * Math.PI * R / n + 0.2, 2.8, 0.5), color, x, z, 1.4, 0, a + Math.PI / 2);
-    addCircle(x, z, 1.6);
+  const n = PALISADE_N, R = L.r * 0.9, seg = 2 * R * Math.sin(Math.PI / n) + 0.35;
+  for (let i = 1; i < n; i++) {
+    const a = i / n * Math.PI * 2, x = L.x + Math.sin(a) * R, z = L.z + Math.cos(a) * R;
+    // posts with pointed tops, turned along the wall
+    const g = [];
+    for (let k = 0; k < 6; k++) { const px = -seg / 2 + (k + 0.5) * seg / 6;
+      g.push(paint(new THREE.CylinderGeometry(0.22, 0.25, 2.9, 6).translate(px, 1.45, 0), color));
+      g.push(paint(new THREE.ConeGeometry(0.23, 0.5, 6).translate(px, 3.15, 0), color)); }
+    g.push(paint(new THREE.BoxGeometry(seg, 0.18, 0.12).translate(0, 2.2, 0.24), 0x5a4030), paint(new THREE.BoxGeometry(seg, 0.18, 0.12).translate(0, 0.8, 0.24), 0x5a4030));
+    const m = new THREE.Mesh(merge(g), BATCH_MAT); m.position.set(x, heightAt(x, z), z); m.rotation.y = a; m.castShadow = true; scene.add(m);
+    addOBox(x, z, seg, 0.6, a);
   }
 }
 

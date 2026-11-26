@@ -1,6 +1,6 @@
 import * as THREE from '../lib/three.module.min.js';
 import { rng, fbm, clamp } from './util.js';
-import { toon, merge } from './style.js';
+import { toon, merge, windMaterial } from './style.js';
 
 let _t = 0; const G_time = () => _t; export const tickWorld = t => { _t = t; };
 export const G_grass = [];
@@ -261,8 +261,8 @@ export function buildForest(scene, avoid = () => false) {
   ]);
   const N = 2600;
   const trunks = new THREE.InstancedMesh(trunkGeo, toon(0x7a5236), N * 2);
-  const pines = new THREE.InstancedMesh(pineGeo, toon(0xffffff), N);
-  const rounds = new THREE.InstancedMesh(roundGeo, toon(0xffffff), N);
+  const pines = new THREE.InstancedMesh(pineGeo, windMaterial(toon(0xffffff, { unique: true }), 2.5, 0.028), N);
+  const rounds = new THREE.InstancedMesh(roundGeo, windMaterial(toon(0xffffff, { unique: true }), 2.5, 0.04), N);
   let nt = 0, np = 0, nr = 0;
   for (let tries = 0; (np + nr) < N * 1.7 && tries < N * 10; tries++) {
     const x = (r() - 0.5) * (WORLD_SIZE - 40), z = (r() - 0.5) * (WORLD_SIZE - 40);
@@ -301,7 +301,7 @@ export function buildForest(scene, avoid = () => false) {
 
   // Grass tufts and flowers
   const blade = merge([0, 1, 2].map(i => new THREE.ConeGeometry(0.09, 0.7, 3, 1, true).translate(Math.cos(i * 2.1) * 0.15, 0.35, Math.sin(i * 2.1) * 0.15).rotateY(i)));
-  const G = ('ontouchstart' in window) ? 12000 : 26000, grass = new THREE.InstancedMesh(blade, toon(0xffffff), G);
+  const G = ('ontouchstart' in window) ? 12000 : 26000, grass = new THREE.InstancedMesh(blade, windMaterial(toon(0xffffff, { unique: true }), 0.05, 0.35), G);
   const flowers = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.14, 0).translate(0, 0.55, 0), toon(0xffffff), 3000);
   const PETALS = [0xff8fb1, 0xffffff, 0xffe066, 0xb39cff, 0xff6b6b];
   let g = 0, f = 0;

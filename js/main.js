@@ -8,6 +8,8 @@ import { initInstall } from './install.js';
 import { regionSystem } from './regions.js';
 import { initView } from './view.js';
 import { combatSystem } from './combat.js';
+import { defenseSystem } from './defenses.js';
+import { propSystem } from './props.js';
 import { Outline, createSky } from './style.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD, uiSystem, banner } from './ui.js';
@@ -80,7 +82,7 @@ function startGame(save) {
   document.getElementById('title').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   createPlayer();
-  G.systems = [combatSystem, weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, regionSystem, tutorialSystem, uiSystem];
+  G.systems = [combatSystem, weatherSystem, dayNight, survival, zombieSystem, interactSystem, locationSystem, npcSystem, factionSystem, storySystem, storageSystem, effectsSystem, buildingSystem, vehicleSystem, craftingSystem, gatherSystem, animalSystem, bossSystem, characterSystem, missionSystem, regionSystem, defenseSystem, propSystem, tutorialSystem, uiSystem];
   for (const s of G.systems) s.init?.();
   initHUD();
   input.enabled = true;

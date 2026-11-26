@@ -5,6 +5,7 @@ import { addInteractable } from './interact.js';
 import { toon, paint, merge } from './style.js';
 import { toast } from './ui.js';
 import { sfx } from './audio.js';
+import { registerDoor } from './defenses.js';
 
 /*
   EXPLORABLE BUILDINGS — houses with rooms and furniture you can search, and two-storey buildings
@@ -125,6 +126,7 @@ export function multiStory(scene, L, cx, cz, w, d, { color, roof = 0x5a5f6a, roo
     furniture(scene, r.kind, rx, y, rz, r.rot || 0, r.loot, L.id);
   }
   g1.userData.keep = true;
+  registerDoor('m' + Math.round(cx) + '_' + Math.round(cz), cx, cz + d / 2, 2.2, 0);
   multi.push({ x: cx, z: cz, hw: w / 2, hd: d / 2, base, g1, roof: roofM, slab });
 }
 

@@ -80,7 +80,7 @@ function flee(n, th, dt, speed = 6.5) {
 
 function attack(n, target, d, isPlayer) {
   const ranged = isRanged(n);
-  const range = ranged ? 18 : 1.9 + (target.k?.scale ? 0.6 : 0);
+  const range = ranged ? (n.range || 18) : 1.9 + (target.k?.scale ? 0.6 : 0);
   if (d > range) return false;
   n.cd -= 0;
   if (n.cd > 0) return true;
@@ -124,6 +124,16 @@ export const npcSystem = {
       if (hpF < 0.3 && n.healCd <= 0 && (!th || th.d > 5) && n.role !== 'wanderer') { n.healCd = 25; n.hp = Math.min(n.maxHp, n.hp + n.maxHp * 0.35); burst(n.pos.x, n.pos.y + 1.3, n.pos.z, 0x7ad35a, 6, 2, 0.1); }
       const panic = th && (hpF < 0.35 || th.count >= (isRanged(n) ? 9 : 7) || (n.role === 'wanderer' && (!n.weapon || hpF < 0.7 || th.count > 2)));
 
+      if (n.role === 'sentry') {
+        // lookout on a watchtower: stays up there, shoots zombies (and the player, if the faction is hostile)
+        const z = threats(n, n.range || 34);
+        const enemy = isHostile(n) && dP < 34 && !G.dead ? { t: P, d: dP, isP: true } : z ? { t: z.t, d: z.d } : null;
+        if (enemy) { n.rot = Math.atan2(enemy.t.pos.x - n.pos.x, enemy.t.pos.z - n.pos.z); if (n.cd <= 0) attack(n, enemy.t, enemy.d, enemy.isP); }
+        else { n.wanderT -= dt; if (n.wanderT < 0) { n.wanderT = 2 + Math.random() * 3; n.lookA = (Math.random() - 0.5) * 2.4; } n.rot += Math.atan2(Math.sin((n.lookA || 0) - n.rot), Math.cos((n.lookA || 0) - n.rot)) * Math.min(1, dt * 2); }
+        n.pos.set(n.perch.x, n.perch.y, n.perch.z); n.mesh.rotation.y = n.rot;
+        if (dP < 90) animateHuman(n.mesh, dt, 0, { aim: !!enemy, weapon: n.weapon, stagger: n.stagger > 0 ? n.stagger : 0 });
+        continue;
+      }
       if (n.stagger > 0) { /* flinch: lose a moment */ }
       else if (isHostile(n) && dP < (n.role === 'raider' ? 150 : 26) && !G.dead && !(th && th.d < 3)) {
         if (hpF < 0.25 && n.role !== 'leader') flee(n, { cx: P.pos.x, cz: P.pos.z }, dt, 6);

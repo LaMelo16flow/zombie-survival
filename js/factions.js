@@ -7,6 +7,7 @@ import { spawnNPC, removeNPC, npcs, randomName } from './npc.js';
 import { heightAt, addCircle } from './world.js';
 import { toast, showChoice, showModal, showHub, closeModal, esc } from './ui.js';
 import { toon } from './style.js';
+import { fortifyCamp } from './defenses.js';
 
 export const FACTIONS = {
   haven:  { name: 'Riverside Haven', leader: 'Mara', shirt: 0x5a7a4a, css: '#7fb069', loc: 'haven',
@@ -47,6 +48,7 @@ function spawnCamp(f) {
   const leader = spawnNPC({ name: F.leader, faction: f, role: 'leader', shirt: F.shirt, hat: F.hat, x: L.x, z: L.z - 4, hp: 200, weapon: 'pistol' });
   leader.talk = addInteractable({ getPos: () => leader.pos, r: 2.6, enabled: () => leader.alive && relation(f) !== 'hostile',
     label: () => `Talk to ${F.leader} (${F.name})`, action: () => talkToLeader(f) });
+  fortifyCamp(L, f, F, relation);
   for (let i = 0; i < 5; i++) {
     const a = i / 5 * Math.PI * 2;
     spawnNPC({ name: randomName(), faction: f, role: 'guard', shirt: F.shirt, hat: F.hat, x: L.x + Math.sin(a) * L.r * 0.55, z: L.z + Math.cos(a) * L.r * 0.55, weapon: F.weapons[i % F.weapons.length] });
@@ -199,19 +201,15 @@ const claimable = L => !L.faction && G.save.world.discovered.includes(L.id) && !
 
 function buildBaseVisuals(L) {
   const mine = G.save.factions.player;
-  const g = new THREE.Group();
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 7, 6), toon(0x9a9a9a)); pole.position.y = 3.5;
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.3), toon(new THREE.Color(mine.color).getHex(), { side: THREE.DoubleSide })); flag.position.set(1.1, 6.2, 0);
-  g.add(pole, flag); g.position.set(L.x + 3, heightAt(L.x + 3, L.z + 3), L.z + 3); G.scene.add(g);
+  const flag = G.addFlag(L.x + 3, L.z + 3, new THREE.Color(mine.color).getHex(), 7);   // waves in the wind
   addCircle(L.x + 3, L.z + 3, 0.3);
   const mat = toon(0x8a6342);
   for (let i = 0; i < 14; i++) {
     if (i === 0) continue;
     const a = i / 14 * Math.PI * 2, R = L.r + 4, x = L.x + Math.sin(a) * R, z = L.z + Math.cos(a) * R;
     const m = new THREE.Mesh(new THREE.BoxGeometry(2 * Math.PI * R / 14 * 0.7, 1.4, 0.6), mat);
-    m.position.set(x, heightAt(x, z) + 0.7, z); m.rotation.y = a + Math.PI / 2; m.castShadow = true; G.scene.add(m);
+    m.position.set(x, heightAt(x, z) + 0.7, z); m.rotation.y = a; m.castShadow = true; G.scene.add(m);
   }
-  G.baseFlag = flag;
 }
 
 function claimBase(L) {
@@ -270,7 +268,7 @@ export const factionSystem = {
         (mine && mine.base === L.id && Math.hypot(x - L.x, z - L.z) < L.r + 25));
     };
     G.hostileTargets = () => npcs.filter(n => n.alive && n.mesh.visible && n.faction && relation(n.faction) === 'hostile');
-    G.targetsForZombies = () => npcs.filter(n => n.alive && n.mesh.visible && n.role !== 'leader');
+    G.targetsForZombies = () => npcs.filter(n => n.alive && n.mesh.visible && n.role !== 'leader' && n.role !== 'sentry');
     G.locationColor = L => L.faction ? FACTIONS[L.faction].css : (G.save.factions.player?.base === L.id ? G.save.factions.player.color : '#e0a34a');
     G.mapLegend = () => Object.values(FACTIONS).map(F => `<span style="color:${F.css}">● ${F.name}</span>`).join(' ');
     G.on('newDay', () => {
@@ -299,7 +297,6 @@ export const factionSystem = {
       for (const n of mem) setMode(n, anyFollow ? 'guard' : 'follow');
       toast(anyFollow ? 'Hold position!' : 'Follow me!', 1.5);
     }
-    if (G.baseFlag) G.baseFlag.rotation.y = Math.sin(G.time * 2) * 0.3;
   }
 };
 

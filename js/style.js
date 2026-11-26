@@ -176,3 +176,26 @@ export function merge(geos) {
   if (col) out.setAttribute('color', new THREE.BufferAttribute(col, 3));
   return out;
 }
+
+/* ---------- Wind (used by trees, grass and flags) ---------- */
+export const wind = { time: { value: 0 }, strength: { value: 1 } };
+
+// Bend the top of a mesh with the wind. Works for instanced meshes (each tree/blade gets its own phase).
+export function windMaterial(mat, bendStart = 1.5, amount = 0.035) {
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uWindT = wind.time; sh.uniforms.uWindS = wind.strength;
+    sh.vertexShader = 'uniform float uWindT; uniform float uWindS;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      {
+        vec2 ip = vec2(0.0);
+        #ifdef USE_INSTANCING
+          ip = vec2(instanceMatrix[3][0], instanceMatrix[3][2]);
+        #endif
+        float bend = max(0.0, transformed.y - ${bendStart.toFixed(2)}) * ${amount.toFixed(4)} * uWindS;
+        transformed.x += sin(uWindT * 1.6 + ip.x * 0.21 + ip.y * 0.13) * bend + sin(uWindT * 4.1 + ip.y) * bend * 0.25;
+        transformed.z += cos(uWindT * 1.2 + ip.x * 0.17) * bend * 0.6;
+      }`);
+  };
+  mat.customProgramCacheKey = () => 'wind' + bendStart + amount;
+  return mat;
+}
+
