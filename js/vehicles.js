@@ -1,7 +1,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
 import { input, pressed, down, updateMoveFromKeys, addTouchButton } from './input.js';
-import { heightAt, collide, WATER, addCircle, removeCollider } from './world.js';
+import { heightAt, collide, WATER, addCircle, removeCollider, addOBox } from './world.js';
 import { addInteractable } from './interact.js';
 import { toon, paint, merge } from './style.js';
 import { toast, showChoice } from './ui.js';
@@ -100,7 +100,7 @@ function exit() {
   const side = v.g.rotation.y + Math.PI / 2, P = G.player;
   P.pos.x = v.pos.x + Math.sin(side) * (v.T.wid / 2 + 1); P.pos.z = v.pos.z + Math.cos(side) * (v.T.wid / 2 + 1);
   P.mesh.visible = true; P.rot = v.g.rotation.y;
-  v.speed = 0; hud.classList.add('hidden'); park(v);
+  v.speed = 0; hud.classList.add('hidden'); if (v.dyn) { removeCollider(v.dyn); v.dyn = null; } park(v);
 }
 
 const fwd = new THREE.Vector3(), tmp = { x: 0, z: 0 };
@@ -130,7 +130,8 @@ function drive(dt) {
   const h = v.g.rotation.y;
   const before = { x: v.pos.x, z: v.pos.z };
   v.pos.x += Math.sin(h) * v.speed * dt; v.pos.z += Math.cos(h) * v.speed * dt;
-  // collisions: test a circle at the front and at the back
+  // collisions: test a circle at the front and at the back (our own body collider is taken out while we test)
+  if (v.dyn) { removeCollider(v.dyn); v.dyn = null; }
   let hit = 0;
   for (const s of [1, -1]) {
     tmp.x = v.pos.x + Math.sin(h) * s * (T.len / 2 - 0.9); tmp.z = v.pos.z + Math.cos(h) * s * (T.len / 2 - 0.9);
@@ -141,8 +142,7 @@ function drive(dt) {
     const impact = Math.abs(v.speed);
     d.hp -= impact * 0.9 / T.mass; v.speed *= -0.25; shake(Math.min(0.5, impact / 30)); sfx.hit();
     burst(v.pos.x + Math.sin(h) * T.len / 2, v.pos.y + 1, v.pos.z + Math.cos(h) * T.len / 2, 0xc9d1d9, 10, 4, 0.12);
-    if (impact > 14) P.hurt(impact * 0.4, 'crash');
-    if (d.hp <= 0) { d.hp = 0; toast(`The ${T.name.toLowerCase()} is wrecked!`, 3); exit(); return; }
+    if (d.hp <= 0) { d.hp = 0; toast(`The ${T.name.toLowerCase()} is wrecked! You climb out.`, 3); exit(); return; }
   } else if (hit > 0) v.speed *= 0.9;
   // run over zombies
   if (Math.abs(v.speed) > 3) for (const zb of zombies) {
@@ -168,6 +168,8 @@ function drive(dt) {
   // player rides along
   P.pos.set(v.pos.x, v.pos.y, v.pos.z); P.rot = h; P.moving = Math.abs(v.speed) > 1; P.sprinting = Math.abs(v.speed) > 12;
   d.x = v.pos.x; d.z = v.pos.z; d.rot = h;
+  // the moving car is solid: zombies, people and animals bump into it and claw at it instead of walking through
+  v.dyn = addOBox(v.pos.x, v.pos.z, T.wid, T.len, h);
   // camera swings behind the car when you are not looking around
   if (Math.abs(input.lookX) < 0.5 && Math.abs(v.speed) > 2) {
     let want = h + Math.PI; let dd = want - P.camYaw; dd = Math.atan2(Math.sin(dd), Math.cos(dd)); P.camYaw += dd * Math.min(1, dt * 2);
@@ -205,6 +207,20 @@ export const vehicleSystem = {
     headlight = new THREE.SpotLight(0xfff2d0, 0, 60, 0.55, 0.6, 1.2); G.scene.add(headlight, headlight.target);
     hud = document.createElement('div'); hud.id = 'drivehud'; hud.className = 'hidden'; document.getElementById('hud').appendChild(hud);
     G.driveUpdate = drive;
+    // While you drive, every hit lands on the car, not on you. If the car breaks, you climb out unhurt.
+    G.damageCar = (dmg, from) => {
+      const v = G.driving; if (!v) return;
+      v.data.hp -= dmg * 0.8 / v.T.mass; shake(Math.min(0.25, dmg / 60)); sfx.hit();
+      burst(v.pos.x, v.pos.y + 1.2, v.pos.z, 0xc9d1d9, 5, 3, 0.1);
+      if (v.data.hp <= 0) { v.data.hp = 0; toast(`The ${v.T.name.toLowerCase()} is wrecked! You climb out.`, 3); exit(); }
+    };
+    // distance from a point to the outside of the car you are driving (zombies use it to know if they can reach)
+    G.carSurfDist = (x, z) => {
+      const v = G.driving; if (!v) return 1e9;
+      const h = v.g.rotation.y, dx = x - v.pos.x, dz = z - v.pos.z;
+      const lz = Math.abs(dx * Math.sin(h) + dz * Math.cos(h)) - v.T.len / 2, lx = Math.abs(dx * Math.cos(h) - dz * Math.sin(h)) - v.T.wid / 2;
+      return Math.hypot(Math.max(0, lx), Math.max(0, lz));
+    };
     G.vehicleList = () => vehicles;
     addPumpStation();
     G.extraInventory = () => `<div class="row"><span>Fuel cans</span><b>${G.save.inv.fuel || 0}</b></div>`;

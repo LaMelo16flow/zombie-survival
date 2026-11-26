@@ -114,7 +114,8 @@ const HUB = [
 let hubTab = 'bag';
 export function showHub(tab, html) {
   hubTab = tab;
-  const rail = HUB.map(([id, label, ic]) => `<button data-hub="${id}" class="${id === tab ? 'on' : ''}">${icon(ic)}<span>${label}</span></button>`).join('');
+  const KEYS = { bag: 'I', craft: 'C', build: 'B', map: 'M', missions: 'O', crew: 'Q', skills: 'K', journal: 'J', system: 'P' }, pc = G.view?.device === 'pc';
+  const rail = HUB.map(([id, label, ic]) => `<button data-hub="${id}" class="${id === tab ? 'on' : ''}">${icon(ic)}<span>${label}</span>${pc ? `<kbd>${KEYS[id]}</kbd>` : ''}</button>`).join('');
   showModal(`<div class="hub"><nav class="rail">${rail}<button class="close" data-hub="close">${icon('x')}<span>Close</span></button></nav>${html}</div>`);
   document.querySelectorAll('[data-hub]').forEach(b => b.onclick = () => { const id = b.dataset.hub; if (id === 'close') return closeModal(); HUB.find(h => h[0] === id)[3](); });
 }

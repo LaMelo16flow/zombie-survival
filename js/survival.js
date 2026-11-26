@@ -31,7 +31,7 @@ const warned = { h: false, t: false };
 export function damage(dmg, from) {
   const s = G.save.stats;
   if (G.dead) return;
-  if (G.driving && from !== 'crash') dmg *= 0.3;   // the car protects you
+  if (G.driving && G.damageCar) { G.damageCar(dmg, from); return; }   // in a car, the car takes the hit
   if (from !== 'starving') dmg *= 1 - (ARMOR[G.save.inv.armor] || ARMOR.none).block;   // armour
   s.hp -= dmg;
   if (dmg > 2) {

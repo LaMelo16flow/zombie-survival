@@ -233,3 +233,18 @@ input[type=range] { padding: 0; accent-color: var(--flare); border: 0; backgroun
 .panel ol.steps { padding-left: 22px; margin: 12px 0; } .panel ol.steps li { margin: 8px 0; padding-left: 4px; }
 #update { position: fixed; left: 50%; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); z-index: 40; display: flex; gap: 8px; align-items: center;
   background: var(--glass2); border: 1px solid var(--flare); border-radius: 999px; padding: 6px 6px 6px 16px; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+
+/* ---------- Device views ---------- */
+#rotate { position: fixed; inset: 0; z-index: 60; background: #0b141b; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 30px; }
+#rotate svg { width: 64px; height: 64px; color: var(--flare); }
+#rotate b { font-size: 20px; } #rotate span { color: var(--dim); }
+/* phones held sideways are only ~390px tall: shrink the HUD so the game shows through */
+[data-device=phone] #portrait { width: 50px; height: 50px; } [data-device=phone] #initial { font-size: 18px; }
+[data-device=phone] .gauge { width: 30px; height: 30px; } [data-device=phone] .gauge svg { width: 14px; height: 14px; }
+[data-device=phone] #minimap { width: 92px; height: 92px; } [data-device=phone] #clock { top: calc(max(10px, env(safe-area-inset-top)) + 98px); width: 92px; }
+[data-device=phone] #hubbtn { width: 44px; height: 44px; right: calc(max(12px, env(safe-area-inset-right)) + 102px); }
+[data-device=phone] #mission { top: calc(max(10px, env(safe-area-inset-top)) + 66px); max-width: 170px; font-size: 11px; }
+[data-device=phone] #banner .big { font-size: 28px; } [data-device=phone] #toast { font-size: 13px; padding: 6px 14px; }
+[data-device=phone] .panel { padding: 16px; } [data-device=phone] .panel h2 { font-size: 19px; }
+/* PC: crosshair sits where you aim (right of the character) — keyboard keys shown in the hub */
+[data-device=pc] .hub .rail button kbd { margin-left: auto; font: 500 11px var(--ui); color: var(--dim); border: 1px solid var(--line2); border-radius: 6px; padding: 1px 6px; }

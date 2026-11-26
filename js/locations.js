@@ -317,7 +317,8 @@ export const locationSystem = {
       const inside = Math.abs(P.pos.x - b.x) < b.hw + 0.5 && Math.abs(P.pos.z - b.z) < b.hd + 0.5;
       b.roof.visible = !inside; if (inside) inAny = true;
     }
-    P.camDist += ((inAny ? 3.6 : 7) - P.camDist) * Math.min(1, dt * 4);
+    const V = G.view || { dist: 7, zoom: 1 };
+    P.camDist += ((inAny ? Math.min(3.6, V.dist * V.zoom) : V.dist * V.zoom) - P.camDist) * Math.min(1, dt * 4);
   }
 };
 

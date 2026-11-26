@@ -245,6 +245,7 @@ export const zombieSystem = {
         if (zb.k.special === 'explode' && td < 2.2 && !zb.exploded) { zb.exploded = true; zb.hp = 0; hitZombie(zb, 1, zb.pos.x, zb.pos.z, 0); continue; }
         const a = Math.atan2(tx - zb.pos.x, tz - zb.pos.z);
         let r = a - zb.rot; r = Math.atan2(Math.sin(r), Math.cos(r)); zb.rot += r * Math.min(1, dt * 6);
+        if (!target && G.driving) td = G.carSurfDist(zb.pos.x, zb.pos.z) + 0.9;   // claw at the car you're in
         const reach = 1.3 * (zb.k.scale || 1);
         if (td > reach) speed = zb.k.chase * (mods.zSpeed || 1) * (night ? 1.15 : 1);
         zb.atkCd -= dt;

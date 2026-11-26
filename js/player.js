@@ -17,7 +17,7 @@ export function createPlayer() {
   mesh.rotation.y = s.rot;
   G.player = {
     mesh, pos: mesh.position, rot: s.rot, speed: 0, radius: 0.45,
-    camYaw: s.rot + Math.PI, camPitch: 0.35, camDist: 7,
+    camYaw: s.rot + Math.PI, camPitch: 0.35, camDist: G.view?.dist || 7,
     attackT: 0, aiming: false
   };
   return G.player;
@@ -68,15 +68,17 @@ export function updatePlayer(dt) {
   if (P.attackT > 0) P.attackT = Math.max(0, P.attackT - dt * 3);
   animateHuman(P.mesh, dt, P.speed, { attack: P.attackT, aim: P.aiming });
 
-  followCamera(dt, P.pos.x, P.pos.y + 1.7, P.pos.z, P.camDist);
+  followCamera(dt, P.pos.x, P.pos.y + (G.view?.height || 1.7), P.pos.z, P.camDist, G.view?.shoulder || 0);
   syncSave();
 }
 function syncSave() { const P = G.player, s = G.save.player; s.x = P.pos.x; s.z = P.pos.z; s.rot = P.rot; }
 
 // Orbit camera around a point (used on foot and in vehicles)
-export function followCamera(dt, x, y, z, dist) {
+export function followCamera(dt, x, y, z, dist, shoulder = 0) {
   const P = G.player;
-  camTarget.set(x, y, z);
+  // over-the-shoulder: shift the view to the right of the character (camera right = (cos yaw, 0, -sin yaw))
+  const sh = shoulder * Math.min(1, dist / 5);
+  camTarget.set(x + Math.cos(P.camYaw) * sh, y, z - Math.sin(P.camYaw) * sh);
   const cp = Math.cos(P.camPitch);
   camPos.set(
     camTarget.x + Math.sin(P.camYaw) * cp * dist,

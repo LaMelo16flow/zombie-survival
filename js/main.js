@@ -6,6 +6,7 @@ import { settings, initSettings, trackFrame, openGameSettings } from './settings
 import { tutorialSystem } from './tutorial.js';
 import { initInstall } from './install.js';
 import { regionSystem } from './regions.js';
+import { initView } from './view.js';
 import { Outline, createSky } from './style.js';
 import { createPlayer, updatePlayer } from './player.js';
 import { initHUD, updateHUD, uiSystem, banner } from './ui.js';
@@ -62,7 +63,7 @@ function initRenderer() {
   addEventListener('resize', () => {
     renderer.setSize(innerWidth, innerHeight);
     G.outline.setSize();
-    G.camera.aspect = innerWidth / innerHeight; G.camera.updateProjectionMatrix();
+
   });
 }
 
@@ -111,6 +112,7 @@ buildWorld();
 G.grassMeshes = G_grass; G.trigger = trigger; G.saveNow = saveLocal; G.settings = settings; G.openGameSettings = openGameSettings;
 initSettings();
 initInstall();
+initView();
 G.camera.position.set(30, 40, 30); G.camera.lookAt(0, 0, 0);
 document.getElementById('btn-new').onclick = () => openCreator(({ name, look, perk }) => {
   clearLocal();
