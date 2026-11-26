@@ -83,6 +83,8 @@ export function solidAt(x, y, z) {
 }
 
 // Push a moving circle (pos.x/pos.z, radius r) out of obstacles.
+// Would something of radius r standing at x,z be inside an obstacle?
+export function blockedAt(x, z, r) { const p = { x, z }; collide(p, r); return Math.abs(p.x - x) + Math.abs(p.z - z) > 0.02; }
 export function collide(pos, r) {
   const k = key(Math.floor(pos.x / CELL), Math.floor(pos.z / CELL));
   const list = grid.get(k);

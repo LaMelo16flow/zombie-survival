@@ -1,7 +1,7 @@
 import * as THREE from '../lib/three.module.min.js';
 import { G } from './state.js';
 import { pressed, down, addTouchButton } from './input.js';
-import { heightAt, collide, HALF } from './world.js';
+import { heightAt, collide, HALF, blockedAt } from './world.js';
 import { makeHuman, animateHuman, giveWeapon } from './characters.js';
 import { isNight } from './daynight.js';
 import { toast, damageNumber } from './ui.js';
@@ -181,7 +181,7 @@ export const zombieSystem = {
     G.zombieList = () => zombies;
     addTouchButton('HIT', 'attack');
     addTouchButton('SHOOT', 'shoot');
-    G.on?.('noise', n => { for (const zb of zombies) if (zb.alive && Math.hypot(zb.pos.x - n.x, zb.pos.z - n.z) < n.r) zb.state = 'chase'; });
+    G.on?.('noise', n => { for (const zb of zombies) if (zb.alive && zb.state !== 'chase' && Math.hypot(zb.pos.x - n.x, zb.pos.z - n.z) < n.r) { zb.state = 'search'; zb.lastSeen = { x: n.x, z: n.z }; zb.searchT = 12; } });   // noise draws them to where it came from
   },
   update(dt) {
     const P = G.player;
@@ -227,9 +227,9 @@ export const zombieSystem = {
         const e = Math.hypot(t.pos.x - zb.pos.x, t.pos.z - zb.pos.z);
         if (e < td) { td = e; tx = t.pos.x; tz = t.pos.z; target = t; }
       }
-      if (zb.state === 'wander' && td < sight) { zb.state = 'chase'; if (d < 40) sfx.groan(zb.pos.x, zb.pos.z, zb.k.scale ? 0.7 : 1); }
+      if (zb.state !== 'chase' && td < sight) { zb.state = 'chase'; alertPack(zb); if (d < 40) sfx.groan(zb.pos.x, zb.pos.z, zb.k.scale ? 0.7 : 1); }
       else if (d < 30 && Math.random() < dt * (zb.state === 'chase' ? 0.12 : 0.03)) sfx.groan(zb.pos.x, zb.pos.z, zb.k.scale ? 0.7 : zb.k.thin ? 1.3 : 1);
-      if (zb.state === 'chase' && td > sight * 2.2) zb.state = 'wander';
+      if (zb.state === 'chase') { if (td < sight * 2.2) zb.lastSeen = { x: tx, z: tz }; else { zb.state = zb.lastSeen ? 'search' : 'wander'; zb.searchT = 10; } }
 
       let speed = 0;
       const mods = G.save.world.mods;
@@ -243,16 +243,29 @@ export const zombieSystem = {
           spawnGroup(zb.pos.x + (Math.random() - 0.5) * 30, zb.pos.z + (Math.random() - 0.5) * 30, 5, ['walker', 'runner']);
         }
         if (zb.k.special === 'explode' && td < 2.2 && !zb.exploded) { zb.exploded = true; zb.hp = 0; hitZombie(zb, 1, zb.pos.x, zb.pos.z, 0); continue; }
-        const a = Math.atan2(tx - zb.pos.x, tz - zb.pos.z);
-        let r = a - zb.rot; r = Math.atan2(Math.sin(r), Math.cos(r)); zb.rot += r * Math.min(1, dt * 6);
+        // surround: while still far, each zombie aims for its own side of the target instead of a single file line
+        let gx = tx, gz = tz;
+        if (td > 4) { const base = Math.atan2(zb.pos.x - tx, zb.pos.z - tz) + (zb.slot ??= (Math.random() - 0.5) * 1.6), rr = Math.min(td * 0.45, 5); gx = tx + Math.sin(base) * rr; gz = tz + Math.cos(base) * rr; }
+        steer(zb, Math.atan2(gx - zb.pos.x, gz - zb.pos.z), dt);
         if (!target && G.driving) td = G.carSurfDist(zb.pos.x, zb.pos.z) + 0.9;   // claw at the car you're in
         const reach = 1.3 * (zb.k.scale || 1);
         if (td > reach) speed = zb.k.chase * (mods.zSpeed || 1) * (night ? 1.15 : 1);
+        // runners lunge the last few metres
+        zb.lungeCd = (zb.lungeCd || 0) - dt;
+        if (zb.kind === 'runner' && td < 4 && td > reach && zb.lungeCd <= 0) { zb.lungeCd = 3; zb.lungeT = 0.3; }
+        if (zb.lungeT > 0) { zb.lungeT -= dt; speed = 10; }
         zb.atkCd -= dt;
         if (td <= reach + 0.25 && zb.atkCd <= 0 && Math.abs((target ? target.pos.y : P.pos.y) - zb.pos.y) < 1.6) {
           zb.atkCd = 1.1; zb.atkAnim = 1;
           if (target) target.hurt(zb.k.dmg, zb); else if (!P.elevated) P.hurt(zb.k.dmg * (mods.zDmg || 1), 'zombie');
         }
+      } else if (zb.state === 'search') {
+        // go to where they last saw you, then sniff around
+        const ls = zb.lastSeen, dl = Math.hypot(ls.x - zb.pos.x, ls.z - zb.pos.z);
+        zb.searchT -= dt;
+        if (dl > 2) { steer(zb, Math.atan2(ls.x - zb.pos.x, ls.z - zb.pos.z), dt); speed = zb.k.chase * 0.7; }
+        else { zb.wanderT -= dt; if (zb.wanderT <= 0) { zb.wanderT = 1 + Math.random() * 2; zb.rot += (Math.random() - 0.5) * 3; } speed = zb.k.speed * 0.6; }
+        if (zb.searchT <= 0) { zb.state = 'wander'; zb.lastSeen = null; }
       } else {
         zb.wanderT -= dt;
         if (zb.wanderT <= 0) { zb.wanderT = 2 + Math.random() * 5; zb.rot += (Math.random() - 0.5) * 2.5; zb.idle = Math.random() < 0.4; }
@@ -260,8 +273,10 @@ export const zombieSystem = {
       }
       if (zb.screamCd) zb.screamCd = Math.max(0, zb.screamCd - dt) || null;
       zb.atkAnim = Math.max(0, zb.atkAnim - dt * 2.5);
-      zb.pos.x += Math.sin(zb.rot) * speed * dt + zb.kx * dt;
-      zb.pos.z += Math.cos(zb.rot) * speed * dt + zb.kz * dt;
+      const mvA = zb.detour ? wallFollow(zb) : zb.rot;
+      const bx = zb.pos.x, bz = zb.pos.z;
+      zb.pos.x += Math.sin(mvA) * speed * dt + zb.kx * dt;
+      zb.pos.z += Math.cos(mvA) * speed * dt + zb.kz * dt;
       zb.kx *= Math.pow(0.02, dt); zb.kz *= Math.pow(0.02, dt);
       // keep zombies apart
       if (d < 40) for (const o of zombies) if (o !== zb && o.alive) {
@@ -270,12 +285,45 @@ export const zombieSystem = {
       }
       collide(zb.pos, 0.4 * (zb.k.scale || 1));
       settleY(zb.pos, dt);
+      // stuck on a wall/tree/car? walk around it
+      if (zb.detour) { if ((zb.detour.t -= dt) <= 0 || zb.detour.clear) zb.detour = null; }
+      else if (speed > 0.5 && zb.state !== 'wander' && d < 70) {
+        const moved = Math.hypot(zb.pos.x - bx, zb.pos.z - bz), want = speed * dt;
+        zb.stuck = moved < want * 0.35 ? (zb.stuck || 0) + dt : 0;
+        if (zb.stuck > 0.35) { zb.stuck = 0; zb.detour = findDetour(zb); }
+      }
       zb.mesh.rotation.y = zb.rot;
       if (d < 90 && !zb.boss) animateHuman(zb.mesh, dt, speed / 4, { zombie: true, attack: zb.atkAnim });
       if (zb.k.crawl) { const p = zb.mesh.userData.parts; p.body.rotation.x = 1.35; p.body.position.y = 0.32; p.legL.rotation.x = p.legR.rotation.x = 0.2; p.head.rotation.x = -1.1; }
     }
   }
 };
+
+// A zombie that spots you wakes up the ones around it (they spread the alarm a little further)
+function alertPack(zb, depth = 0) {
+  for (const o of zombies) if (o !== zb && o.alive && o.state !== 'chase' && Math.hypot(o.pos.x - zb.pos.x, o.pos.z - zb.pos.z) < 12) {
+    o.state = 'search'; o.lastSeen = { x: G.player.pos.x, z: G.player.pos.z }; o.searchT = 12;
+    if (depth < 1) alertPack(o, depth + 1);
+  }
+}
+function steer(zb, a, dt) { let r = a - zb.rot; r = Math.atan2(Math.sin(r), Math.cos(r)); zb.rot += r * Math.min(1, dt * 6); }
+// Try directions to the sides until one is free, prefer the side closer to where it wants to go
+// Stuck: pick a side and follow the obstacle's edge (like a hand on the wall) until the way to the goal is open.
+function findDetour(zb) {
+  const goal = zb.rot, rad = 0.45 * (zb.k.scale || 1);
+  // try the side that is open soonest
+  let side = Math.random() < 0.5 ? 1 : -1;
+  for (const off of [0.9, 1.5]) { if (lineFree(zb.pos, goal + off, 1.5, rad)) { side = 1; break; } if (lineFree(zb.pos, goal - off, 1.5, rad)) { side = -1; break; } }
+  return { side, goal, t: 7, rad };
+}
+const lineFree = (P, a, len, rad) => { for (let t = 0.35; t <= len; t += 0.3) if (blockedAt(P.x + Math.sin(a) * t, P.z + Math.cos(a) * t, rad)) return false; return true; };
+function wallFollow(zb) {
+  const D = zb.detour, goal = zb.rot, P = zb.pos;
+  // is the straight way open again (two probes ahead)?
+  if (D.t < 6.6 && lineFree(P, goal, 3, D.rad)) { D.clear = true; return goal; }
+  for (const off of [0.6, 1.1, 1.6, 2.1, 2.7]) { const a = goal + off * D.side; if (lineFree(P, a, 1.2, D.rad)) return a; }
+  D.side = -D.side; return goal + Math.PI;
+}
 
 let lastMelee = null;
 function giveWeaponOnce() {
