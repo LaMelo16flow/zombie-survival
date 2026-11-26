@@ -263,6 +263,7 @@ export const factionSystem = {
           claimBase(L);
         } });
     }
+    G.safePlaces = () => LOCATIONS.filter(L => (L.faction && relation(L.faction) !== 'gone' && relation(L.faction) !== 'hostile') || G.save.factions.player?.base === L.id).map(L => ({ x: L.x, z: L.z }));
     G.isSafe = (x, z) => {
       const mine = G.save.factions.player;
       return LOCATIONS.some(L => (L.faction && relation(L.faction) !== 'gone' && Math.hypot(x - L.x, z - L.z) < L.r + 15) ||
